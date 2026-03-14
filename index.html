@@ -149,26 +149,16 @@
     let projectRegionMap = {}; 
     let projectCategoryMap = {};
 
+    // 重新校準的語意字典庫
     const domainDictionary = {
-        "教育與學術": ["教育", "學校", "教學", "教案", "學生", "學術", "課後輔導", "師資", "雙語", "研討會", "研究"],
-        "科技與工程": ["科技", "數位", "ai", "人工智慧", "半導體", "量子", "機器人", "工程", "資訊", "網路", "軟體", "系統", "資安", "航太", "通訊", "大數據", "雲端"],
-        "環境與生態": ["環境", "生態", "保育", "永續", "氣候", "淨零", "碳", "海洋", "動物", "農業", "雨林", "水質", "減碳", "綠能", "自然", "環保"],
-        "外交與公共事務": ["外交", "政策", "人權", "民主", "治理", "智庫", "倡議", "公共", "社會", "原民", "平權", "政府", "法律", "志工"],
-        "藝文與設計": ["藝術", "文化", "博物館", "策展", "設計", "影音", "媒體", "歷史", "文創", "文學", "攝影", "馬戲", "音樂", "舞蹈", "建築"],
-        "商業與新創": ["商業", "行銷", "新創", "創業", "金融", "經濟", "產業", "投資", "企劃", "商務", "品牌", "市場", "物流"],
-        "醫療與公衛": ["醫療", "公衛", "醫學", "衛生", "照護", "醫院", "生醫", "疾病", "防疫", "細胞"]
+        "教育與學術": ["教育", "學校", "教學", "教案", "學生", "學術", "課後輔導", "師資", "雙語", "研討會", "研究", "大學", "中學", "小學", "教室", "校園"],
+        "科技與工程": ["科技", "數位", "ai", "人工智慧", "半導體", "量子", "機器人", "工程", "資訊", "網路", "軟體", "系統", "資安", "航太", "通訊", "大數據", "雲端", "網頁", "智慧", "數據", "演算法", "程式"],
+        "環境與生態": ["環境", "生態", "保育", "永續", "氣候", "淨零", "碳", "海洋", "動物", "農業", "雨林", "水質", "減碳", "綠能", "自然", "環保", "地球"],
+        "外交與公共事務": ["外交", "政策", "人權", "民主", "治理", "智庫", "倡議", "公共", "社會", "原民", "平權", "政府", "法律", "志工", "社區", "地方創生", "跨國合作", "國際組織"],
+        "藝文與設計": ["藝術", "文化", "博物館", "策展", "設計", "影音", "媒體", "歷史", "文創", "文學", "攝影", "馬戲", "音樂", "舞蹈", "建築", "典藏", "古籍", "表演", "自媒體", "影像", "展覽"],
+        "商業與新創": ["商業", "行銷", "新創", "創業", "金融", "經濟", "產業", "投資", "企劃", "商務", "品牌", "市場", "物流", "商機", "轉型"],
+        "醫療與公衛": ["醫療", "公衛", "醫學", "衛生", "照護", "醫院", "生醫", "疾病", "防疫", "細胞", "健康", "臨床"]
     };
-
-    // 建立絕對的執行權重陣列，放棄物件屬性的預設排序，將教育強制提昇為第一判定順位
-    const priorityEngine = [
-        "教育與學術",
-        "科技與工程",
-        "環境與生態",
-        "外交與公共事務",
-        "藝文與設計",
-        "商業與新創",
-        "醫療與公衛"
-    ];
 
     const officialCategories = [
         "全部",
@@ -208,22 +198,38 @@
         const categoryCounts = { "全部": data.length };
         const regionCounts = { "全部": data.length };
         
-        priorityEngine.forEach(dom => domainCounts[dom] = 0);
+        for (const dom in domainDictionary) { domainCounts[dom] = 0; }
         officialCategories.forEach(cat => { if(cat !== "全部") categoryCounts[cat] = 0; });
         for (const reg in regionDictionary) { if(reg !== "全部") regionCounts[reg] = 0; }
         
         const extraCategories = new Set();
 
         data.forEach(item => {
-            // 核心領域判定引擎：使用 priorityEngine 陣列確保判定順序絕對不變
+            // --- 核心優化：頻率計分法 (Frequency Scoring) ---
             let matchedDomain = "其他";
-            const fullText = `${item.project_name} ${item.theme} ${item.description}`.toLowerCase();
+            let maxScore = 0;
             
-            for (const domain of priorityEngine) {
-                const keywords = domainDictionary[domain];
-                if (keywords.some(k => fullText.includes(k))) {
+            // 屏除「計畫名稱」，只擷取「主題」與「簡述」的內文作為語意分析基礎，避免標題黨干擾
+            const textToSearch = `${item.theme} ${item.description}`.toLowerCase();
+            
+            for (const [domain, keywords] of Object.entries(domainDictionary)) {
+                let score = 0;
+                keywords.forEach(k => {
+                    // 針對 AI (Artificial Intelligence) 進行精確邊界比對，避免被包含 'ai' 的英文單字（如 taiwan）誤觸
+                    if (k === 'ai') {
+                        const matches = textToSearch.match(/(?:^|[^a-z])ai(?:[^a-z]|$)/ig);
+                        if (matches) score += matches.length;
+                    } else {
+                        // 計算該關鍵字出現的次數
+                        const matches = textToSearch.match(new RegExp(k, 'ig'));
+                        if (matches) score += matches.length;
+                    }
+                });
+
+                // 積分賽制：只取最高分的領域
+                if (score > maxScore) {
+                    maxScore = score;
                     matchedDomain = domain;
-                    break; // 確保只要具備最高順位（如教育）的屬性，就立即鎖定分類並跳出迴圈
                 }
             }
             projectDomainMap[item.id] = matchedDomain;
@@ -260,9 +266,8 @@
             categoryCounts[matchedCategory] = (categoryCounts[matchedCategory] || 0) + 1;
         });
 
+        // 渲染「核心領域」
         const domContainer = document.getElementById('domainFilters');
-        
-        // 生成「全部」按鈕
         const btnAllDom = document.createElement('button');
         btnAllDom.className = `btn-filter btn-domain dom-btn active`;
         btnAllDom.innerText = `全部 (${domainCounts["全部"]})`;
@@ -274,9 +279,8 @@
         };
         domContainer.appendChild(btnAllDom);
 
-        // 依照 priorityEngine 的順序生成領域按鈕
-        priorityEngine.forEach(domain => {
-            if (domainCounts[domain] === 0) return;
+        for (const domain in domainDictionary) {
+            if (domainCounts[domain] === 0) continue;
             const btn = document.createElement('button');
             btn.className = `btn-filter btn-domain dom-btn`;
             btn.innerText = `${domain} (${domainCounts[domain]})`;
@@ -287,9 +291,8 @@
                 renderTable(document.getElementById('searchInput').value);
             };
             domContainer.appendChild(btn);
-        });
+        }
 
-        // 若有其他未匹配項目，才生成「其他」按鈕
         if (domainCounts["其他"] > 0) {
             const btnOther = document.createElement('button');
             btnOther.className = `btn-filter btn-domain dom-btn`;
@@ -303,6 +306,7 @@
             domContainer.appendChild(btnOther);
         }
 
+        // 渲染「官方主題」
         const catContainer = document.getElementById('categoryFilters');
         const renderCategoryBtn = (catName, displayCatName = catName) => {
             if (catName !== '全部' && !categoryCounts[catName]) return;
@@ -321,6 +325,7 @@
         officialCategories.forEach(cat => renderCategoryBtn(cat));
         extraCategories.forEach(cat => renderCategoryBtn(cat));
 
+        // 渲染「地理板塊」
         const regContainer = document.getElementById('regionFilters');
         for (const region in regionDictionary) {
             if (region === '未歸類' && regionCounts[region] === 0) continue;
