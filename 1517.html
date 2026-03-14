@@ -6,7 +6,7 @@
     <title>海外圓夢計畫 - 15-17歲決策面板</title>
     <style>
         :root {
-            --primary-color: #2980b9; /* 針對 15-17 歲換上較為活潑的藍色系 */
+            --primary-color: #2980b9; 
             --secondary-color: #34495e;
             --accent-color: #e74c3c;
             --success-color: #27ae60;
@@ -88,7 +88,7 @@
         <div class="control-panel">
             <span class="stats-badge">顯示：<span id="displayCount">0</span> / 當前模式總計：<span id="totalCount">0</span></span>
             <input type="text" id="searchInput" placeholder="輸入關鍵字 (例如: 語言, 見習)...">
-            <button class="btn btn-toggle" id="toggleHiddenBtn">檢視隱藏計畫</button>
+            <button class="btn btn-toggle" id="toggleHiddenBtn">檢視隱藏計畫 (0)</button>
             <button class="btn btn-reset" id="resetHiddenBtn">清空隱藏名單</button>
             <a href="index.html" class="btn btn-switch">切換至 18-30 歲組</a>
         </div>
@@ -114,7 +114,7 @@
         <div class="filter-buttons-container" id="regionFilters"></div>
     </div>
 
-    <div id="modeIndicator" class="mode-indicator">⚠️ 目前處於「隱藏名單」檢視模式。上方按鈕數量顯示為您已剔除的計畫總和。</div>
+    <div id="modeIndicator" class="mode-indicator">⚠️ 目前處於「隱藏名單」檢視模式。下方皆為您已剔除的計畫。</div>
 
     <table>
         <thead>
@@ -160,7 +160,7 @@
     const officialCategories = [
         "全部", "年度旗艦計畫", "(一)國際組織、基金會、智庫見習", "(三)新創團隊及職能培力",
         "(四)青年地方創生及社區機構", "(五)文創機構", "(六)青年行動及服務",
-        "(七)僑胞海外公共參與", "(八)專業職能培訓", "(九)科技網絡及數位服務"
+        "(七)僑胞海外公共參與", "(八)專業職能培訓", "(九)科技網絡及數位服務", "💫圓夢助力方案" // 新增助力方案以防漏接
     ];
 
     const regionDictionary = {
@@ -174,14 +174,30 @@
         "未歸類": [] 
     };
 
-    // 核心隔離：改用專屬的 localStorage 鍵值，避免與 18-30 歲組互相污染
+    // 核心隔離：改用專屬的 localStorage 鍵值
     const loadHiddenIds = () => {
         const saved = localStorage.getItem('pathfinder_hidden_ids_1517');
         if (saved) hiddenIds = new Set(JSON.parse(saved));
+        updateToggleButtonUI(); // 載入後立即更新按鈕數量
     };
 
     const saveHiddenIds = () => {
         localStorage.setItem('pathfinder_hidden_ids_1517', JSON.stringify(Array.from(hiddenIds)));
+    };
+
+    // 全新防呆機制：即時更新隱藏按鈕上的數字與狀態
+    const updateToggleButtonUI = () => {
+        const btn = document.getElementById('toggleHiddenBtn');
+        const indicator = document.getElementById('modeIndicator');
+        if (isViewingHidden) {
+            btn.innerText = `返回一般檢視 (共 ${hiddenIds.size} 筆隱藏)`;
+            btn.style.backgroundColor = "var(--accent-color)";
+            indicator.style.display = "block";
+        } else {
+            btn.innerText = `檢視隱藏計畫 (${hiddenIds.size})`;
+            btn.style.backgroundColor = "var(--warning-color)";
+            indicator.style.display = "none";
+        }
     };
 
     const updateFilterCounts = () => {
@@ -303,8 +319,10 @@
             
             if (rawCat.includes("年度旗艦計畫")) {
                 matchedCategory = "年度旗艦計畫";
+            } else if (rawCat.includes("圓夢助力方案")) {
+                matchedCategory = "💫圓夢助力方案";
             } else {
-                const match = officialCategories.find(c => c !== "全部" && c !== "年度旗艦計畫" && rawCat.includes(c));
+                const match = officialCategories.find(c => c !== "全部" && c !== "年度旗艦計畫" && c !== "💫圓夢助力方案" && rawCat.includes(c));
                 if (match) {
                     matchedCategory = match;
                 } else {
@@ -375,9 +393,11 @@
         }
     };
 
-    // 核心資料源隔離：指定讀取 15-17 歲的 JSON 檔案
     fetch('pathfinder_data_1517.json')
-        .then(res => res.json())
+        .then(res => {
+            if (!res.ok) throw new Error(`HTTP 錯誤狀態碼: ${res.status}。檔案可能不存在。`);
+            return res.json();
+        })
         .then(data => {
             rawData = data;
             loadHiddenIds();
@@ -386,8 +406,14 @@
             renderTable();
         })
         .catch(err => {
-            console.error(err);
-            document.getElementById('tableBody').innerHTML = `<tr><td colspan="8" style="text-align:center; color:red;">資料載入失敗</td></tr>`;
+            console.error("資料載入發生錯誤:", err);
+            document.getElementById('tableBody').innerHTML = `
+                <tr>
+                    <td colspan="8" style="text-align:center; color:#e74c3c; padding: 30px; font-weight: bold; background-color: #fdedec;">
+                        🚨 資料庫載入失敗<br><br>
+                        <span style="font-size:13px; font-weight:normal; color:#c0392b;">系統訊息：${err.message}</span>
+                    </td>
+                </tr>`;
         });
 
     const renderTable = (searchKeyword = '') => {
@@ -445,11 +471,13 @@
         document.getElementById('displayCount').innerText = displayCount;
     };
 
+    // 操作時同步更新按鈕文字
     window.hideRow = (id) => {
         const row = document.getElementById(`row-${id}`);
         row.classList.add('fade-out');
         hiddenIds.add(id);
         saveHiddenIds();
+        updateToggleButtonUI(); // 即時更新按鈕文字
         updateFilterCounts();
         setTimeout(() => { renderTable(document.getElementById('searchInput').value); }, 300);
     };
@@ -459,24 +487,14 @@
         row.classList.add('fade-out'); 
         hiddenIds.delete(id);
         saveHiddenIds();
+        updateToggleButtonUI(); // 即時更新按鈕文字
         updateFilterCounts();
         setTimeout(() => { renderTable(document.getElementById('searchInput').value); }, 300);
     };
 
     document.getElementById('toggleHiddenBtn').addEventListener('click', () => {
         isViewingHidden = !isViewingHidden;
-        const btn = document.getElementById('toggleHiddenBtn');
-        const indicator = document.getElementById('modeIndicator');
-        
-        if (isViewingHidden) {
-            btn.innerText = "返回一般檢視";
-            btn.style.backgroundColor = "var(--accent-color)";
-            indicator.style.display = "block";
-        } else {
-            btn.innerText = "檢視隱藏計畫";
-            btn.style.backgroundColor = "var(--warning-color)";
-            indicator.style.display = "none";
-        }
+        updateToggleButtonUI(); // 切換模式時更新按鈕文字與顏色
         updateFilterCounts();
         renderTable(document.getElementById('searchInput').value);
     });
@@ -489,6 +507,7 @@
         if(confirm("這將會清除您所有的隱藏紀錄，確定執行？")) {
             hiddenIds.clear();
             saveHiddenIds();
+            updateToggleButtonUI(); // 清空後數字歸零
             updateFilterCounts();
             renderTable(document.getElementById('searchInput').value);
         }
