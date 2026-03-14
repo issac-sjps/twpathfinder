@@ -52,8 +52,7 @@
 
         .mode-indicator { display: none; background-color: var(--warning-color); color: white; text-align: center; padding: 8px; font-weight: bold; margin-bottom: 15px; border-radius: 4px; }
 
-        /* 三維度過濾器樣式 */
-        .filter-group { background-color: #f1f5f8; border-radius: 6px; margin-bottom: 12px; padding: 12px 15px; display: flex; align-items: flex-start; flex-wrap: wrap; gap: 10px; }
+        .filter-group { background-color: #f1f5f8; border-radius: 6px; margin-bottom: 12px; padding: 12px 15px; display: flex; align-items: flex-start; flex-wrap: wrap; gap: 10px; transition: all 0.3s; }
         .filter-label { font-weight: bold; color: var(--secondary-color); margin-right: 5px; white-space: nowrap; display: flex; align-items: center; padding-top: 6px; width: 110px; }
         .filter-buttons-container { display: flex; flex-wrap: wrap; gap: 8px; flex: 1; }
 
@@ -85,7 +84,7 @@
     <div class="header-section">
         <h1>海外圓夢計畫決策面板</h1>
         <div class="control-panel">
-            <span class="stats-badge">顯示：<span id="displayCount">0</span> / 總計：<span id="totalCount">0</span></span>
+            <span class="stats-badge">顯示：<span id="displayCount">0</span> / 當前模式總計：<span id="totalCount">0</span></span>
             <input type="text" id="searchInput" placeholder="輸入關鍵字 (例如: 澳洲, 實驗室)...">
             <button class="btn btn-toggle" id="toggleHiddenBtn">檢視隱藏計畫</button>
             <button class="btn btn-reset" id="resetHiddenBtn">清空隱藏名單</button>
@@ -100,23 +99,20 @@
 
     <div class="filter-group">
         <div class="filter-label">💡 核心領域：</div>
-        <div class="filter-buttons-container" id="domainFilters">
-        </div>
+        <div class="filter-buttons-container" id="domainFilters"></div>
     </div>
 
     <div class="filter-group">
         <div class="filter-label">🏷️ 官方主題：</div>
-        <div class="filter-buttons-container" id="categoryFilters">
-        </div>
+        <div class="filter-buttons-container" id="categoryFilters"></div>
     </div>
 
     <div class="filter-group" style="margin-bottom: 20px;">
         <div class="filter-label">📍 地理板塊：</div>
-        <div class="filter-buttons-container" id="regionFilters">
-        </div>
+        <div class="filter-buttons-container" id="regionFilters"></div>
     </div>
 
-    <div id="modeIndicator" class="mode-indicator">⚠️ 目前處於「隱藏名單」檢視模式。此處顯示的皆為您已剔除的計畫。</div>
+    <div id="modeIndicator" class="mode-indicator">⚠️ 目前處於「隱藏名單」檢視模式。上方按鈕數量顯示為您已剔除的計畫總和。</div>
 
     <table>
         <thead>
@@ -149,7 +145,6 @@
     let projectRegionMap = {}; 
     let projectCategoryMap = {};
 
-    // 重新校準的語意字典庫
     const domainDictionary = {
         "教育與學術": ["教育", "學校", "教學", "教案", "學生", "學術", "課後輔導", "師資", "雙語", "研討會", "研究", "大學", "中學", "小學", "教室", "校園"],
         "科技與工程": ["科技", "數位", "ai", "人工智慧", "半導體", "量子", "機器人", "工程", "資訊", "網路", "軟體", "系統", "資安", "航太", "通訊", "大數據", "雲端", "網頁", "智慧", "數據", "演算法", "程式"],
@@ -161,16 +156,9 @@
     };
 
     const officialCategories = [
-        "全部",
-        "年度旗艦計畫",
-        "(一)國際組織、基金會、智庫見習",
-        "(三)新創團隊及職能培力",
-        "(四)青年地方創生及社區機構",
-        "(五)文創機構",
-        "(六)青年行動及服務",
-        "(七)僑胞海外公共參與",
-        "(八)專業職能培訓",
-        "(九)科技網絡及數位服務"
+        "全部", "年度旗艦計畫", "(一)國際組織、基金會、智庫見習", "(三)新創團隊及職能培力",
+        "(四)青年地方創生及社區機構", "(五)文創機構", "(六)青年行動及服務",
+        "(七)僑胞海外公共參與", "(八)專業職能培訓", "(九)科技網絡及數位服務"
     ];
 
     const regionDictionary = {
@@ -193,49 +181,118 @@
         localStorage.setItem('pathfinder_hidden_ids', JSON.stringify(Array.from(hiddenIds)));
     };
 
-    const initFilters = (data) => {
-        const domainCounts = { "全部": data.length, "其他": 0 };
-        const categoryCounts = { "全部": data.length };
-        const regionCounts = { "全部": data.length };
-        
+    // 負責動態計算並更新按鈕上數字的核心系統
+    const updateFilterCounts = () => {
+        const domainCounts = { "全部": 0, "其他": 0 };
+        const categoryCounts = { "全部": 0 };
+        const regionCounts = { "全部": 0 };
+        let extraCategoriesCount = {};
+
         for (const dom in domainDictionary) { domainCounts[dom] = 0; }
         officialCategories.forEach(cat => { if(cat !== "全部") categoryCounts[cat] = 0; });
         for (const reg in regionDictionary) { if(reg !== "全部") regionCounts[reg] = 0; }
-        
+
+        // 根據當前的可見度狀態（一般/隱藏模式）動態計數
+        rawData.forEach(item => {
+            const isHidden = hiddenIds.has(item.id);
+            if (!isViewingHidden && isHidden) return;
+            if (isViewingHidden && !isHidden) return;
+
+            domainCounts["全部"]++;
+            categoryCounts["全部"]++;
+            regionCounts["全部"]++;
+
+            const dom = projectDomainMap[item.id];
+            if (domainCounts[dom] !== undefined) domainCounts[dom]++;
+
+            const cat = projectCategoryMap[item.id];
+            if (categoryCounts[cat] !== undefined) {
+                categoryCounts[cat]++;
+            } else {
+                extraCategoriesCount[cat] = (extraCategoriesCount[cat] || 0) + 1;
+            }
+
+            const reg = projectRegionMap[item.id];
+            if (regionCounts[reg] !== undefined) regionCounts[reg]++;
+        });
+
+        document.getElementById('totalCount').innerText = domainCounts["全部"];
+        let needsTableReset = false;
+
+        // 更新按鈕UI與防呆機制
+        const updateBtnGroup = (selector, countsMap, activeVar, resetCallback, isCat = false) => {
+            document.querySelectorAll(selector).forEach(btn => {
+                const val = btn.getAttribute('data-val');
+                const count = isCat ? (countsMap[val] || extraCategoriesCount[val] || 0) : (countsMap[val] || 0);
+                let displayVal = val;
+                if (isCat) displayVal = val.replace(/^\([一二三四五六七八九十]+\)/, '');
+                
+                btn.innerText = `${displayVal} (${count})`;
+
+                // 若該類別被隱藏至 0，則自動消失。
+                if (count === 0 && val !== '全部') {
+                    btn.style.display = 'none';
+                    // 若該歸 0 類別剛好是目前使用者點選的，則強制將其重置回「全部」，避免畫面卡死
+                    if (activeVar === val) {
+                        btn.classList.remove('active');
+                        resetCallback();
+                        needsTableReset = true;
+                    }
+                } else {
+                    btn.style.display = 'inline-block';
+                }
+            });
+        };
+
+        updateBtnGroup('.dom-btn', domainCounts, activeDomain, () => {
+            activeDomain = '全部';
+            document.querySelector('.dom-btn[data-val="全部"]').classList.add('active');
+        }, false);
+
+        updateBtnGroup('.cat-btn', categoryCounts, activeCategory, () => {
+            activeCategory = '全部';
+            document.querySelector('.cat-btn[data-val="全部"]').classList.add('active');
+        }, true);
+
+        updateBtnGroup('.reg-btn', regionCounts, activeRegion, () => {
+            activeRegion = '全部';
+            document.querySelector('.reg-btn[data-val="全部"]').classList.add('active');
+        }, false);
+
+        if (needsTableReset) {
+            renderTable(document.getElementById('searchInput').value);
+        }
+    };
+
+    // 系統初始化：只負責綁定事件與建立 DOM 結構，不再寫死數字
+    const initFilters = (data) => {
         const extraCategories = new Set();
 
         data.forEach(item => {
-            // --- 核心優化：頻率計分法 (Frequency Scoring) ---
+            // 語意計分演算法
             let matchedDomain = "其他";
             let maxScore = 0;
-            
-            // 屏除「計畫名稱」，只擷取「主題」與「簡述」的內文作為語意分析基礎，避免標題黨干擾
             const textToSearch = `${item.theme} ${item.description}`.toLowerCase();
             
             for (const [domain, keywords] of Object.entries(domainDictionary)) {
                 let score = 0;
                 keywords.forEach(k => {
-                    // 針對 AI (Artificial Intelligence) 進行精確邊界比對，避免被包含 'ai' 的英文單字（如 taiwan）誤觸
                     if (k === 'ai') {
                         const matches = textToSearch.match(/(?:^|[^a-z])ai(?:[^a-z]|$)/ig);
                         if (matches) score += matches.length;
                     } else {
-                        // 計算該關鍵字出現的次數
                         const matches = textToSearch.match(new RegExp(k, 'ig'));
                         if (matches) score += matches.length;
                     }
                 });
-
-                // 積分賽制：只取最高分的領域
                 if (score > maxScore) {
                     maxScore = score;
                     matchedDomain = domain;
                 }
             }
             projectDomainMap[item.id] = matchedDomain;
-            domainCounts[matchedDomain]++;
 
-            // 地理板塊判定
+            // 地理板塊映射
             let matchedRegion = "未歸類";
             for (const [region, keywords] of Object.entries(regionDictionary)) {
                 if (region === '全部' || region === '未歸類') continue;
@@ -245,9 +302,8 @@
                 }
             }
             projectRegionMap[item.id] = matchedRegion;
-            regionCounts[matchedRegion]++;
 
-            // 官方主題判定
+            // 官方主題映射
             const rawCat = item.category.replace(/　/g, '').replace(/\s+/g, ' ');
             let matchedCategory = "未歸類";
             
@@ -263,83 +319,35 @@
                 }
             }
             projectCategoryMap[item.id] = matchedCategory;
-            categoryCounts[matchedCategory] = (categoryCounts[matchedCategory] || 0) + 1;
         });
 
-        // 渲染「核心領域」
-        const domContainer = document.getElementById('domainFilters');
-        const btnAllDom = document.createElement('button');
-        btnAllDom.className = `btn-filter btn-domain dom-btn active`;
-        btnAllDom.innerText = `全部 (${domainCounts["全部"]})`;
-        btnAllDom.onclick = () => {
-            document.querySelectorAll('.dom-btn').forEach(b => b.classList.remove('active'));
-            btnAllDom.classList.add('active');
-            activeDomain = '全部';
-            renderTable(document.getElementById('searchInput').value);
+        // 渲染按鈕框架
+        const createBtn = (containerId, val, btnClass, clickHandler) => {
+            const container = document.getElementById(containerId);
+            const btn = document.createElement('button');
+            btn.className = `btn-filter ${btnClass} ${val === '全部' ? 'active' : ''}`;
+            btn.setAttribute('data-val', val);
+            btn.onclick = () => {
+                document.querySelectorAll(`.${btnClass.split(' ')[0]}`).forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                clickHandler(val);
+                renderTable(document.getElementById('searchInput').value);
+            };
+            container.appendChild(btn);
         };
-        domContainer.appendChild(btnAllDom);
 
-        for (const domain in domainDictionary) {
-            if (domainCounts[domain] === 0) continue;
-            const btn = document.createElement('button');
-            btn.className = `btn-filter btn-domain dom-btn`;
-            btn.innerText = `${domain} (${domainCounts[domain]})`;
-            btn.onclick = () => {
-                document.querySelectorAll('.dom-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                activeDomain = domain;
-                renderTable(document.getElementById('searchInput').value);
-            };
-            domContainer.appendChild(btn);
-        }
+        createBtn('domainFilters', '全部', 'dom-btn btn-domain', v => activeDomain = v);
+        for (const dom in domainDictionary) { createBtn('domainFilters', dom, 'dom-btn btn-domain', v => activeDomain = v); }
+        createBtn('domainFilters', '其他', 'dom-btn btn-domain', v => activeDomain = v);
 
-        if (domainCounts["其他"] > 0) {
-            const btnOther = document.createElement('button');
-            btnOther.className = `btn-filter btn-domain dom-btn`;
-            btnOther.innerText = `其他 (${domainCounts["其他"]})`;
-            btnOther.onclick = () => {
-                document.querySelectorAll('.dom-btn').forEach(b => b.classList.remove('active'));
-                btnOther.classList.add('active');
-                activeDomain = "其他";
-                renderTable(document.getElementById('searchInput').value);
-            };
-            domContainer.appendChild(btnOther);
-        }
+        officialCategories.forEach(cat => createBtn('categoryFilters', cat, 'cat-btn', v => activeCategory = v));
+        extraCategories.forEach(cat => createBtn('categoryFilters', cat, 'cat-btn', v => activeCategory = v));
 
-        // 渲染「官方主題」
-        const catContainer = document.getElementById('categoryFilters');
-        const renderCategoryBtn = (catName, displayCatName = catName) => {
-            if (catName !== '全部' && !categoryCounts[catName]) return;
-            const btn = document.createElement('button');
-            btn.className = `btn-filter cat-btn ${catName === '全部' ? 'active' : ''}`;
-            const shortName = displayCatName.replace(/^\([一二三四五六七八九十]+\)/, '');
-            btn.innerText = `${shortName} (${categoryCounts[catName]})`;
-            btn.onclick = () => {
-                document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                activeCategory = catName;
-                renderTable(document.getElementById('searchInput').value);
-            };
-            catContainer.appendChild(btn);
-        };
-        officialCategories.forEach(cat => renderCategoryBtn(cat));
-        extraCategories.forEach(cat => renderCategoryBtn(cat));
+        createBtn('regionFilters', '全部', 'reg-btn', v => activeRegion = v);
+        for (const reg in regionDictionary) { if (reg !== '全部') createBtn('regionFilters', reg, 'reg-btn', v => activeRegion = v); }
 
-        // 渲染「地理板塊」
-        const regContainer = document.getElementById('regionFilters');
-        for (const region in regionDictionary) {
-            if (region === '未歸類' && regionCounts[region] === 0) continue;
-            const btn = document.createElement('button');
-            btn.className = `btn-filter reg-btn ${region === '全部' ? 'active' : ''}`;
-            btn.innerText = `${region} (${regionCounts[region]})`;
-            btn.onclick = () => {
-                document.querySelectorAll('.reg-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                activeRegion = region;
-                renderTable(document.getElementById('searchInput').value);
-            };
-            regContainer.appendChild(btn);
-        }
+        // 建立完所有按鈕後，呼叫計數器灌入最新動態數字
+        updateFilterCounts();
     };
 
     const detectMissingIds = (data) => {
@@ -379,7 +387,6 @@
         .then(res => res.json())
         .then(data => {
             rawData = data;
-            document.getElementById('totalCount').innerText = rawData.length;
             loadHiddenIds();
             initFilters(rawData); 
             detectMissingIds(rawData);
@@ -445,11 +452,13 @@
         document.getElementById('displayCount').innerText = displayCount;
     };
 
+    // 操作觸發狀態響應
     window.hideRow = (id) => {
         const row = document.getElementById(`row-${id}`);
         row.classList.add('fade-out');
         hiddenIds.add(id);
         saveHiddenIds();
+        updateFilterCounts(); // 觸發響應式更新
         setTimeout(() => { renderTable(document.getElementById('searchInput').value); }, 300);
     };
 
@@ -458,6 +467,7 @@
         row.classList.add('fade-out'); 
         hiddenIds.delete(id);
         saveHiddenIds();
+        updateFilterCounts(); // 觸發響應式更新
         setTimeout(() => { renderTable(document.getElementById('searchInput').value); }, 300);
     };
 
@@ -475,6 +485,7 @@
             btn.style.backgroundColor = "var(--warning-color)";
             indicator.style.display = "none";
         }
+        updateFilterCounts(); // 模式切換時逆向更新數量
         renderTable(document.getElementById('searchInput').value);
     });
 
@@ -486,6 +497,7 @@
         if(confirm("這將會清除您所有的隱藏紀錄，確定執行？")) {
             hiddenIds.clear();
             saveHiddenIds();
+            updateFilterCounts(); // 觸發響應式更新
             renderTable(document.getElementById('searchInput').value);
         }
     });
