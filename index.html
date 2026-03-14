@@ -76,7 +76,7 @@
             border-radius: 4px;
         }
 
-        /* 新增：倒數計時器專屬樣式 */
+        /* 倒數計時器專屬樣式 */
         .countdown-timer {
             background-color: #2c3e50;
             color: #f1c40f;
@@ -190,6 +190,28 @@
             border-left: 4px solid #e74c3c;
             padding-left: 10px;
         }
+
+        /* 新增：系統支援區塊 (問題回報) CSS */
+        .support-section {
+            margin-top: 30px;
+            padding-top: 25px;
+            border-top: 1px solid #eee;
+            text-align: center;
+        }
+        .btn-support {
+            display: inline-block;
+            padding: 10px 22px;
+            background-color: #7f8c8d;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+        }
+        .btn-support:hover {
+            background-color: #34495e;
+        }
     </style>
 </head>
 <body>
@@ -275,15 +297,20 @@
     <div class="note">
         <p><strong>數據警示：</strong> 18-30 歲組別原始資料為 155 案，目前系統實際抓取數量為 154 案，請使用者留意 1 案之誤差。</p>
     </div>
+
+    <div class="support-section">
+        <a href="https://issac-sjps.github.io/IssueTrackingSystem/" target="_blank" rel="noopener noreferrer" class="btn-support">
+            問題回報 (Issue Report)
+        </a>
+    </div>
+
 </div>
 
 <script>
     function initializeCountdown() {
-        // 嚴格設定目標時間：2026年4月1日 中午12:00:00 (本地時間)
         const targetDate = new Date("2026-04-01T12:00:00").getTime();
         const countdownElement = document.getElementById("countdown-display");
 
-        // 檢查防呆：如果找不到 DOM (Document Object Model) 元素，立刻終止執行，避免瀏覽器報錯
         if (!countdownElement) {
             console.error("Critical Error: Countdown DOM element not found.");
             return;
@@ -293,22 +320,19 @@
             const now = new Date().getTime();
             const timeDifference = targetDate - now;
 
-            // 當時間已經超過截止期限的強制攔截邏輯
             if (timeDifference <= 0) {
                 countdownElement.innerHTML = "報名已全面截止 (Registration Closed)";
                 countdownElement.style.color = "#e74c3c";
-                countdownElement.style.animation = "none"; // 停止脈衝動畫
-                clearInterval(timerInterval); // 徹底清除記憶體中的計時器
+                countdownElement.style.animation = "none";
+                clearInterval(timerInterval);
                 return;
             }
 
-            // 嚴謹的數學降維轉換計算：毫秒 -> 天、時、分、秒
             const days = Math.floor(timeDifference / (1000 * 60 * 60 * 24));
             const hours = Math.floor((timeDifference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
             const minutes = Math.floor((timeDifference % (1000 * 60 * 60)) / (1000 * 60));
             const seconds = Math.floor((timeDifference % (1000 * 60)) / 1000);
 
-            // 補零邏輯：確保版面寬度一致，不會因為個位數而造成畫面跳動
             const formattedHours = hours < 10 ? "0" + hours : hours;
             const formattedMinutes = minutes < 10 ? "0" + minutes : minutes;
             const formattedSeconds = seconds < 10 ? "0" + seconds : seconds;
@@ -316,14 +340,10 @@
             countdownElement.innerHTML = `距離 4/1 截止還有 (Countdown days to 4/1) <br> <span>${days}</span> 天 <span>${formattedHours}</span> 時 <span>${formattedMinutes}</span> 分 <span>${formattedSeconds}</span> 秒`;
         }
 
-        // 立即執行第一次更新，消除 `setInterval` 延遲一秒的視覺空白期
         updateTimer();
-        
-        // 設定每 1000 毫秒 (1秒) 觸發一次更新迴圈
         const timerInterval = setInterval(updateTimer, 1000);
     }
 
-    // 確保 HTML 完全加載後才啟動腳本，確保完美執行
     document.addEventListener("DOMContentLoaded", initializeCountdown);
 </script>
 
