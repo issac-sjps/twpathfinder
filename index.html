@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>青年百億海外圓夢計畫 - 個人化決策面板</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #34495e;
+            --accent-color: #e74c3c;
+            --success-color: #27ae60;
+            --bg-color: #f8f9fa;
+            --border-color: #dee2e6;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: #333;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        .header-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        h1 { margin: 0; color: var(--primary-color); font-size: 24px; }
+
+        .control-panel {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        input[type="text"] {
+            padding: 10px 15px;
+            width: 350px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: bold;
+            transition: background-color 0.2s, opacity 0.2s;
+        }
+
+        .btn-reset { background-color: var(--secondary-color); color: white; }
+        .btn-reset:hover { background-color: #1a252f; }
+        
+        .btn-hide { background-color: var(--accent-color); color: white; padding: 5px 10px; font-size: 12px;}
+        .btn-hide:hover { background-color: #c0392b; }
+
+        .btn-download { background-color: var(--success-color); color: white; text-decoration: none; display: inline-block; padding: 6px 12px; border-radius: 4px; font-size: 12px; }
+        .btn-download:hover { background-color: #219653; }
+        .btn-download.disabled { background-color: #95a5a6; cursor: not-allowed; pointer-events: none; }
+
+        .stats-badge {
+            background-color: #e9ecef;
+            padding: 5px 10px;
+            border-radius: 12px;
+            font-size: 14px;
+            color: #495057;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+            vertical-align: top;
+        }
+
+        th {
+            background-color: var(--primary-color);
+            color: white;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        tr:hover { background-color: #f8f9fa; }
+        
+        .tag {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 3px;
+            background-color: #e3f2fd;
+            color: #1976d2;
+            font-size: 11px;
+            margin-bottom: 5px;
+            margin-right: 5px;
+        }
+
+        .description-cell { max-width: 350px; }
+
+        /* 當列被標記為隱藏時的動畫 */
+        .fade-out {
+            opacity: 0;
+            transform: translateX(20px);
+            transition: opacity 0.3s, transform 0.3s;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header-section">
+        <h1>海外圓夢計畫決策面板</h1>
+        <div class="control-panel">
+            <span class="stats-badge">目前顯示：<span id="displayCount">0</span> 筆 / 總計：<span id="totalCount">0</span> 筆</span>
+            <input type="text" id="searchInput" placeholder="輸入關鍵字搜尋 (例如: 澳洲, 教學, AI)...">
+            <button class="btn btn-reset" id="resetHiddenBtn">恢復所有隱藏計畫</button>
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 8%">編號</th>
+                <th style="width: 15%">計畫名稱</th>
+                <th style="width: 12%">城市</th>
+                <th style="width: 15%">主題與類別</th>
+                <th style="width: 5%">名額</th>
+                <th style="width: 30%">簡述</th>
+                <th style="width: 8%">簡章</th>
+                <th style="width: 7%">操作</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody">
+            </tbody>
+    </table>
+</div>
+
+<script>
+    // 核心資料狀態管理
+    let rawData = [];
+    let hiddenIds = new Set();
+
+    // 1. 初始化：讀取 LocalStorage 中的隱藏清單
+    const loadHiddenIds = () => {
+        const saved = localStorage.getItem('pathfinder_hidden_ids');
+        if (saved) {
+            hiddenIds = new Set(JSON.parse(saved));
+        }
+    };
+
+    // 2. 儲存隱藏清單至 LocalStorage
+    const saveHiddenIds = () => {
+        localStorage.setItem('pathfinder_hidden_ids', JSON.stringify(Array.from(hiddenIds)));
+    };
+
+    // 3. 載入 JSON 資料
+    fetch('pathfinder_data.json')
+        .then(res => {
+            if (!res.ok) throw new Error("無法讀取 JSON 檔案，請確認伺服器狀態與檔案路徑。");
+            return res.json();
+        })
+        .then(data => {
+            rawData = data;
+            document.getElementById('totalCount').innerText = rawData.length;
+            loadHiddenIds();
+            renderTable();
+        })
+        .catch(err => {
+            console.error(err);
+            document.getElementById('tableBody').innerHTML = `<tr><td colspan="8" style="text-align:center; color:red;">資料載入失敗：${err.message}<br>請確保您使用 Live Server 或 Python http.server 啟動網頁，因瀏覽器安全性限制，無法直接點擊 index.html 讀取本地 JSON 檔案。</td></tr>`;
+        });
+
+    // 4. 渲染表格的核心邏輯
+    const renderTable = (searchKeyword = '') => {
+        const tbody = document.getElementById('tableBody');
+        tbody.innerHTML = '';
+        let displayCount = 0;
+
+        const keyword = searchKeyword.toLowerCase();
+
+        rawData.forEach(item => {
+            // 過濾邏輯 A：如果被標記為隱藏，直接跳過
+            if (hiddenIds.has(item.id)) return;
+
+            // 過濾邏輯 B：關鍵字搜尋 (搜尋範圍包含名稱、城市、主題、簡述)
+            const searchableText = `${item.project_name} ${item.city} ${item.theme} ${item.description}`.toLowerCase();
+            if (keyword && !searchableText.includes(keyword)) return;
+
+            displayCount++;
+
+            const tr = document.createElement('tr');
+            tr.id = `row-${item.id}`;
+            
+            const downloadHtml = item.download_url 
+                ? `<a href="${item.download_url}" target="_blank" class="btn-download">下載</a>` 
+                : `<span class="btn-download disabled">無</span>`;
+
+            // 整理類別標籤，移除過長的空白字元
+            const cleanCategory = item.category.replace(/　/g, '').replace(/\s+/g, ' ');
+
+            tr.innerHTML = `
+                <td><strong>${item.id}</strong></td>
+                <td><strong>${item.project_name}</strong><br><small style="color:#7f8c8d">${item.duration}</small></td>
+                <td>${item.city}</td>
+                <td>
+                    <span class="tag">${cleanCategory}</span><br>
+                    <span class="tag" style="background-color:#e8f8f5; color:#1abc9c;">${item.theme}</span>
+                </td>
+                <td style="text-align:center;">${item.quota}</td>
+                <td class="description-cell">${item.description}</td>
+                <td>${downloadHtml}</td>
+                <td>
+                    <button class="btn btn-hide" onclick="hideRow('${item.id}')">隱藏</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        document.getElementById('displayCount').innerText = displayCount;
+    };
+
+    // 5. 隱藏單一計畫的觸發函數
+    window.hideRow = (id) => {
+        const row = document.getElementById(`row-${id}`);
+        // 加入 CSS 動畫類別
+        row.classList.add('fade-out');
+        
+        // 將 ID 加入隱藏清單並存檔
+        hiddenIds.add(id);
+        saveHiddenIds();
+
+        // 等待動畫結束後重新渲染表格
+        setTimeout(() => {
+            renderTable(document.getElementById('searchInput').value);
+        }, 300); // 配合 CSS transition 的 0.3s
+    };
+
+    // 6. 監聽搜尋輸入
+    document.getElementById('searchInput').addEventListener('input', (e) => {
+        renderTable(e.target.value);
+    });
+
+    // 7. 恢復所有隱藏計畫
+    document.getElementById('resetHiddenBtn').addEventListener('click', () => {
+        if(confirm("確定要恢復所有被隱藏的計畫嗎？")) {
+            hiddenIds.clear();
+            saveHiddenIds();
+            renderTable(document.getElementById('searchInput').value);
+        }
+    });
+</script>
+
+</body>
+</html>
