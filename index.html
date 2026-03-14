@@ -63,10 +63,7 @@
             transition: border-color 0.3s;
         }
 
-        input[type="text"]:focus {
-            outline: none;
-            border-color: var(--primary-color);
-        }
+        input[type="text"]:focus { outline: none; border-color: var(--primary-color); }
 
         .btn {
             padding: 8px 15px;
@@ -75,7 +72,7 @@
             cursor: pointer;
             font-size: 13px;
             font-weight: bold;
-            transition: background-color 0.2s, opacity 0.2s;
+            transition: all 0.2s;
             text-decoration: none;
             display: inline-flex;
             align-items: center;
@@ -88,12 +85,10 @@
         .btn-reset:hover { background-color: #1a252f; }
         .btn-official { background-color: var(--info-color); color: white; }
         .btn-official:hover { background-color: #2980b9; }
-        
         .btn-hide { background-color: var(--accent-color); color: white; padding: 5px 10px; font-size: 12px;}
         .btn-hide:hover { background-color: #c0392b; }
         .btn-unhide { background-color: var(--purple-color); color: white; padding: 5px 10px; font-size: 12px;}
         .btn-unhide:hover { background-color: #732d91; }
-
         .btn-download { background-color: var(--success-color); color: white; padding: 6px 12px; border-radius: 4px; font-size: 12px; text-decoration: none; display: inline-block;}
         .btn-download:hover { background-color: #219653; }
         .btn-download.disabled { background-color: #95a5a6; cursor: not-allowed; pointer-events: none; }
@@ -111,48 +106,54 @@
             background-color: var(--alert-bg);
             border-left: 5px solid var(--alert-border);
             padding: 15px 20px;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
             border-radius: 4px;
-            display: none; /* 預設隱藏，由程式邏輯判斷是否顯示 */
+            display: none;
         }
         
-        .missing-alert h3 {
-            margin: 0 0 10px 0;
-            color: #d35400;
-            font-size: 16px;
+        .missing-alert h3 { margin: 0 0 10px 0; color: #d35400; font-size: 16px; display: flex; align-items: center; }
+        .missing-tag { display: inline-block; background-color: #fad7a1; color: #b93b00; padding: 4px 8px; border-radius: 4px; margin: 0 6px 6px 0; font-weight: bold; font-family: monospace; font-size: 13px; border: 1px solid #f39c12; }
+
+        .mode-indicator {
+            display: none; background-color: var(--warning-color); color: white; text-align: center; padding: 8px; font-weight: bold; margin-bottom: 15px; border-radius: 4px;
+        }
+
+        /* 洲別過濾器樣式 */
+        .region-filters {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #f1f5f8;
+            border-radius: 6px;
+            flex-wrap: wrap;
+        }
+
+        .region-filters span {
+            font-weight: bold;
+            color: var(--secondary-color);
+            margin-right: 5px;
             display: flex;
             align-items: center;
         }
 
-        .missing-tag {
-            display: inline-block;
-            background-color: #fad7a1;
-            color: #b93b00;
-            padding: 4px 8px;
-            border-radius: 4px;
-            margin: 0 6px 6px 0;
-            font-weight: bold;
-            font-family: monospace;
-            font-size: 13px;
-            border: 1px solid #f39c12;
+        .btn-region {
+            background-color: white;
+            color: var(--secondary-color);
+            border: 1px solid #bdc3c7;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
         }
 
-        .mode-indicator {
-            display: none;
-            background-color: var(--warning-color);
-            color: white;
-            text-align: center;
-            padding: 8px;
-            font-weight: bold;
-            margin-bottom: 15px;
-            border-radius: 4px;
-        }
+        .btn-region:hover { border-color: var(--info-color); color: var(--info-color); }
+        .btn-region.active { background-color: var(--info-color); color: white; border-color: var(--info-color); font-weight: bold; }
 
         table { width: 100%; border-collapse: collapse; font-size: 14px; }
         th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border-color); vertical-align: top; }
         th { background-color: var(--primary-color); color: white; position: sticky; top: 0; z-index: 10; }
         tr:hover { background-color: #f8f9fa; }
-        
         .tag { display: inline-block; padding: 3px 8px; border-radius: 3px; background-color: #e3f2fd; color: #1976d2; font-size: 11px; margin-bottom: 5px; margin-right: 5px; }
         .description-cell { max-width: 350px; }
         .fade-out { opacity: 0; transform: translateX(20px); transition: opacity 0.3s, transform 0.3s; }
@@ -165,7 +166,7 @@
         <h1>海外圓夢計畫決策面板</h1>
         <div class="control-panel">
             <span class="stats-badge">顯示：<span id="displayCount">0</span> / 總計：<span id="totalCount">0</span></span>
-            <input type="text" id="searchInput" placeholder="輸入關鍵字 (例如: 澳洲, 教學)...">
+            <input type="text" id="searchInput" placeholder="輸入關鍵字 (例如: AI, 教育)...">
             <button class="btn btn-toggle" id="toggleHiddenBtn">檢視隱藏計畫</button>
             <button class="btn btn-reset" id="resetHiddenBtn">清空隱藏名單</button>
             <a href="https://twpathfinder.org/overview1830" target="_blank" class="btn btn-official">官方網站找尋</a>
@@ -176,6 +177,10 @@
         <h3>⚠️ 數據探勘異常報告：官方系統跳號 / 已隱藏之計畫編號</h3>
         <div id="missingIdsList"></div>
     </div>
+
+    <div class="region-filters" id="regionFilters">
+        <span>📍 快速板塊篩選：</span>
+        </div>
 
     <div id="modeIndicator" class="mode-indicator">⚠️ 目前處於「隱藏名單」檢視模式。此處顯示的皆為您已剔除的計畫。</div>
 
@@ -201,6 +206,18 @@
     let rawData = [];
     let hiddenIds = new Set();
     let isViewingHidden = false; 
+    let activeRegion = '全部'; // 當前選中的洲別狀態
+
+    // 硬核地理字典：將城市字串暴力映射至正確的板塊
+    const regionDictionary = {
+        "全部": [],
+        "亞洲": ["日本", "韓國", "印度", "印尼", "新加坡", "泰國"],
+        "大洋洲": ["澳洲", "澳大利亞", "雪梨", "墨爾本", "吐瓦魯", "帛琉"], 
+        "歐洲": ["法國", "義大利", "斯洛伐克", "捷克", "保加利亞", "荷蘭", "愛爾蘭", "德國", "比利時", "瑞典", "冰島", "奧地利", "波蘭", "斯洛維尼亞", "葡萄牙", "西班牙", "瑞士", "英國", "梵蒂岡"],
+        "北美洲": ["美國", "加拿大", "墨西哥"],
+        "中南美洲": ["貝里斯", "瓜地馬拉", "巴拉圭", "智利", "聖露西亞", "聖文森", "阿根廷", "祕魯", "秘魯", "格瑞那丁"],
+        "非洲": ["史瓦帝尼"]
+    };
 
     const loadHiddenIds = () => {
         const saved = localStorage.getItem('pathfinder_hidden_ids');
@@ -211,41 +228,50 @@
         localStorage.setItem('pathfinder_hidden_ids', JSON.stringify(Array.from(hiddenIds)));
     };
 
-    // 異常偵測演算法核心
+    // 初始化地理過濾按鈕
+    const initRegionFilters = () => {
+        const container = document.getElementById('regionFilters');
+        for (const region in regionDictionary) {
+            const btn = document.createElement('button');
+            btn.className = `btn btn-region ${region === '全部' ? 'active' : ''}`;
+            btn.innerText = region;
+            btn.onclick = () => {
+                // 更新按鈕 UI (User Interface) 狀態
+                document.querySelectorAll('.btn-region').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                // 更新狀態變數並重新渲染表格
+                activeRegion = region;
+                renderTable(document.getElementById('searchInput').value);
+            };
+            container.appendChild(btn);
+        }
+    };
+
     const detectMissingIds = (data) => {
         const groups = {};
-        
         data.forEach(item => {
             const parts = item.id.split('-');
             if (parts.length >= 3) {
-                // 擷取前綴 (例如: K-10, I-8)
                 const prefix = parts.slice(0, parts.length - 1).join('-');
-                // 擷取最後的流水號數字
                 const num = parseInt(parts[parts.length - 1], 10);
-                
                 if (!groups[prefix]) groups[prefix] = [];
                 groups[prefix].push(num);
             }
         });
 
         const missingIds = [];
-        
         for (const [prefix, numbers] of Object.entries(groups)) {
             const max = Math.max(...numbers);
-            // 掃描 1 到該群組最大值之間所有缺失的數字
             for (let i = 1; i <= max; i++) {
-                if (!numbers.includes(i)) {
-                    missingIds.push(`${prefix}-${i}`);
-                }
+                if (!numbers.includes(i)) missingIds.push(`${prefix}-${i}`);
             }
         }
 
-        // 渲染至 UI (User Interface) 面板
         if (missingIds.length > 0) {
             const alertBox = document.getElementById('missingAlert');
             const listContainer = document.getElementById('missingIdsList');
             alertBox.style.display = 'block';
-            
             missingIds.forEach(id => {
                 const span = document.createElement('span');
                 span.className = 'missing-tag';
@@ -264,7 +290,8 @@
             rawData = data;
             document.getElementById('totalCount').innerText = rawData.length;
             loadHiddenIds();
-            detectMissingIds(rawData); // 啟動斷層掃描
+            initRegionFilters();
+            detectMissingIds(rawData);
             renderTable();
         })
         .catch(err => {
@@ -279,12 +306,22 @@
         const keyword = searchKeyword.toLowerCase();
 
         rawData.forEach(item => {
+            // 邏輯閘 1：隱藏狀態過濾
             const isHidden = hiddenIds.has(item.id);
             if (!isViewingHidden && isHidden) return; 
             if (isViewingHidden && !isHidden) return; 
 
+            // 邏輯閘 2：關鍵字搜尋過濾
             const searchableText = `${item.project_name} ${item.city} ${item.theme} ${item.description}`.toLowerCase();
             if (keyword && !searchableText.includes(keyword)) return;
+
+            // 邏輯閘 3：地理板塊過濾
+            if (activeRegion !== '全部') {
+                const keywords = regionDictionary[activeRegion];
+                // 檢查城市的字串中是否包含字典定義的任何一個國家關鍵字
+                const isMatch = keywords.some(k => item.city.includes(k));
+                if (!isMatch) return;
+            }
 
             displayCount++;
 
