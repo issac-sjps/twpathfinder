@@ -25,7 +25,84 @@
             text-align: center;
             border-bottom: 2px solid #2c3e50;
             padding-bottom: 10px;
+            margin-bottom: 25px;
         }
+        
+        /* 官方公告專屬區塊 CSS (Cascading Style Sheets) */
+        .announcement-card {
+            background-color: #fdfbf7;
+            border: 1px solid #e1d8c1;
+            border-left: 6px solid #f1c40f;
+            padding: 25px;
+            margin-bottom: 35px;
+            border-radius: 6px;
+        }
+        .announcement-header {
+            border-bottom: 1px dashed #ccc;
+            padding-bottom: 15px;
+            margin-bottom: 15px;
+        }
+        .announcement-header h2 {
+            margin: 0 0 5px 0;
+            color: #d35400;
+            font-size: 1.35rem;
+        }
+        .announcement-date {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            font-weight: bold;
+        }
+        .announcement-body h3 {
+            color: #2980b9;
+            font-size: 1.15rem;
+            margin-top: 20px;
+        }
+        .highlight-box {
+            background-color: #e8f4f8;
+            padding: 10px 15px;
+            border-radius: 4px;
+            color: #2c3e50;
+            font-weight: bold;
+            margin: 15px 0;
+        }
+        .danger-text {
+            color: #c0392b;
+            font-weight: 900;
+            text-align: center;
+            border: 2px solid #c0392b;
+            padding: 15px;
+            margin: 25px 0;
+            background-color: #fff5f5;
+            border-radius: 4px;
+        }
+        .reminder-list {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        .reminder-list li {
+            margin-bottom: 12px;
+            padding-left: 25px;
+            position: relative;
+        }
+        .reminder-list li::before {
+            content: "✓";
+            color: #27ae60;
+            font-weight: bold;
+            position: absolute;
+            left: 0;
+        }
+        .official-link {
+            display: inline-block;
+            margin-top: 15px;
+            color: #2980b9;
+            font-weight: bold;
+            text-decoration: none;
+        }
+        .official-link:hover {
+            text-decoration: underline;
+        }
+
+        /* 數據表格與按鈕 CSS (Cascading Style Sheets) */
         .stats-table {
             width: 100%;
             border-collapse: collapse;
@@ -40,7 +117,6 @@
             background-color: #f8f9fa;
         }
         
-        /* 以下為重新設計的高質感按鈕 CSS (Cascading Style Sheets) 區塊 */
         .button-group {
             display: flex;
             flex-direction: column;
@@ -53,23 +129,21 @@
             text-align: center;
             text-decoration: none;
             color: #fff;
-            border-radius: 12px; /* 圓角加大，視覺更柔和現代 */
+            border-radius: 12px;
             font-weight: 800;
             font-size: 1.15rem;
             letter-spacing: 1px;
-            transition: all 0.3s ease; /* 確保所有特效平滑過渡 */
+            transition: all 0.3s ease;
             border: none;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.15); /* 預設的立體陰影 */
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
         }
-        /* 15-18歲：使用冷色調科技感漸層 */
         .btn-junior {
             background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
         }
         .btn-junior:hover {
-            transform: translateY(-3px); /* 懸停時按鈕上浮 */
-            box-shadow: 0 8px 25px rgba(0, 242, 254, 0.4); /* 懸停時陰影擴大並帶有主題色 */
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 242, 254, 0.4);
         }
-        /* 18-30歲：使用暖色調活力感漸層 */
         .btn-senior {
             background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
         }
@@ -92,12 +166,51 @@
 <div class="container">
     <h1>青年百億海外圓夢計畫 客製化一覽網</h1>
 
+    <div class="announcement-card">
+        <div class="announcement-header">
+            <h2>✈️ 236個圓夢機會全數上架！報名倒數計時開始</h2>
+            <div class="announcement-date">公告訊息 2026.03.05</div>
+        </div>
+        <div class="announcement-body">
+            <p>各位勇敢追夢的青年朋友們，海外翱翔組昨天更新 136 案計畫，您們看到了嗎🫣🔍<br>
+            繼第一波名額釋出後，大家敲碗已久的第二波海外翱翔組資訊已正式上架！<br>
+            截至目前為止，兩波上架總案量已來到 <strong>236 案</strong>！<br>
+            想去海外看看世界嗎？現在就是最佳時機，所有的夢想清單都已經攤在桌上等您挑選了！</p>
+
+            <h3>🔍 總結兩波上架計畫總覽</h3>
+            <p>我們針對不同年齡層與計畫類別，整理了目前的總計案數：</p>
+            <ul>
+                <li>15 - 未滿 18 歲：81 案 (含圓夢助力方案 29 案)</li>
+                <li>18 - 30 歲：155 案 (含年度旗艦計畫 18 筆)</li>
+                <li>總計總案數：共計 236 筆</li>
+            </ul>
+            
+            <div class="highlight-box">
+                每人僅限報名 1 案「海外翱翔組」；惟得再加報名 1 案「海外翱翔組年度旗艦計畫」。
+            </div>
+
+            <div class="danger-text">
+                ⚠️ 重要的事說三遍：4/1(三) 中午 12 點截止！4/1(三) 中午 12 點截止！4/1(三) 中午 12 點截止！<br>
+                請注意！所有類別的報名截止時間都是統一的喲！
+            </div>
+
+            <h3>💡 溫馨小提醒</h3>
+            <ul class="reminder-list">
+                <li><strong>不要挑戰壓秒：</strong>越接近截止時間，系統流量會越大。為了避免網路塞車導致資料上傳失敗，強烈建議大家提前 2-3 天完成填寫並送出。</li>
+                <li><strong>仔細核對簡章：</strong>236 個案子各有特色，請務必確認報名資格與所需文件。</li>
+                <li><strong>留意計畫編號：</strong>請留意自己報名的計畫編號(含報名通道)及確認報名文件的上傳無誤，經上傳成功後，專案小組不予提供確認、修改、補件等行政作業。</li>
+            </ul>
+
+            <p>現在就差您的臨門一腳！別讓猶豫成為您圓夢的阻礙，趕快登入官網，挑選命定計畫好好準備，換您上場！</p>
+            <a href="https://twpathfinder.org/overview_entrance" target="_blank" class="official-link">👉 立即前往圓夢一覽表，挑選您的夢想計畫 (原官方連結)</a>
+        </div>
+    </div>
     <table class="stats-table">
         <thead>
             <tr>
                 <th>年齡對象</th>
                 <th>計畫總數</th>
-                <th>重點備註</th>
+                <th>重點備註 (客製化系統追蹤)</th>
             </tr>
         </thead>
         <tbody>
