@@ -51,13 +51,50 @@
 
         .mode-indicator { display: none; background-color: var(--warning-color); color: white; text-align: center; padding: 8px; font-weight: bold; margin-bottom: 15px; border-radius: 4px; }
 
-        /* 洲別過濾器樣式強化 */
-        .region-filters { display: flex; gap: 10px; margin-bottom: 20px; padding: 15px; background-color: #f1f5f8; border-radius: 6px; flex-wrap: wrap; align-items: center; }
-        .region-filters span { font-weight: bold; color: var(--secondary-color); margin-right: 5px; display: flex; align-items: center; }
-        .btn-region { background-color: white; color: var(--secondary-color); border: 1px solid #bdc3c7; padding: 6px 16px; border-radius: 20px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
-        .btn-region:hover { border-color: var(--info-color); color: var(--info-color); }
-        .btn-region.active { background-color: var(--info-color); color: white; border-color: var(--info-color); font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .btn-region.error { background-color: #fdedec; color: #c0392b; border-color: #e74c3c; } /* 未歸類專用警告色 */
+        /* 雙維度過濾器樣式 */
+        .filter-group {
+            background-color: #f1f5f8;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            padding: 15px;
+            display: flex;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .filter-label {
+            font-weight: bold;
+            color: var(--secondary-color);
+            margin-right: 5px;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            padding-top: 6px; /* 對齊按鈕 */
+        }
+
+        .filter-buttons-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            flex: 1;
+        }
+
+        .btn-filter {
+            background-color: white;
+            color: var(--secondary-color);
+            border: 1px solid #bdc3c7;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-filter:hover { border-color: var(--info-color); color: var(--info-color); }
+        .btn-filter.active { background-color: var(--info-color); color: white; border-color: var(--info-color); font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .btn-filter.error { background-color: #fdedec; color: #c0392b; border-color: #e74c3c; }
 
         table { width: 100%; border-collapse: collapse; font-size: 14px; }
         th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border-color); vertical-align: top; }
@@ -75,7 +112,7 @@
         <h1>海外圓夢計畫決策面板</h1>
         <div class="control-panel">
             <span class="stats-badge">顯示：<span id="displayCount">0</span> / 總計：<span id="totalCount">0</span></span>
-            <input type="text" id="searchInput" placeholder="輸入關鍵字 (例如: AI, 教育)...">
+            <input type="text" id="searchInput" placeholder="輸入關鍵字 (例如: AI, 澳洲)...">
             <button class="btn btn-toggle" id="toggleHiddenBtn">檢視隱藏計畫</button>
             <button class="btn btn-reset" id="resetHiddenBtn">清空隱藏名單</button>
             <a href="https://twpathfinder.org/overview1830" target="_blank" class="btn btn-official">官方網站找尋</a>
@@ -87,9 +124,17 @@
         <div id="missingIdsList"></div>
     </div>
 
-    <div class="region-filters" id="regionFilters">
-        <span>📍 快速板塊篩選：</span>
-        </div>
+    <div class="filter-group">
+        <div class="filter-label">🏷️ 主題類別：</div>
+        <div class="filter-buttons-container" id="categoryFilters">
+            </div>
+    </div>
+
+    <div class="filter-group" style="margin-bottom: 20px;">
+        <div class="filter-label">📍 地理板塊：</div>
+        <div class="filter-buttons-container" id="regionFilters">
+            </div>
+    </div>
 
     <div id="modeIndicator" class="mode-indicator">⚠️ 目前處於「隱藏名單」檢視模式。此處顯示的皆為您已剔除的計畫。</div>
 
@@ -115,10 +160,29 @@
     let rawData = [];
     let hiddenIds = new Set();
     let isViewingHidden = false; 
+    
+    // 狀態機：追蹤當前選中的雙維度篩選器
+    let activeCategory = '全部';
     let activeRegion = '全部'; 
-    let projectRegionMap = {}; // 建立全域對照表，提升渲染效能
+    
+    // 全域映射表
+    let projectRegionMap = {}; 
+    let projectCategoryMap = {};
 
-    // 嚴謹的地緣政治與地理字典
+    // 官方主題類別定義 (用於統一字串格式與排序)
+    const officialCategories = [
+        "全部",
+        "年度旗艦計畫",
+        "(一)國際組織、基金會、智庫見習",
+        "(三)新創團隊及職能培力",
+        "(四)青年地方創生及社區機構",
+        "(五)文創機構",
+        "(六)青年行動及服務",
+        "(七)僑胞海外公共參與",
+        "(八)專業職能培訓",
+        "(九)科技網絡及數位服務"
+    ];
+
     const regionDictionary = {
         "全部": [],
         "亞洲": ["日本", "韓國", "印度", "印尼", "新加坡", "泰國"],
@@ -127,7 +191,7 @@
         "北美洲": ["美國", "加拿大", "墨西哥"],
         "中南美洲": ["貝里斯", "瓜地馬拉", "巴拉圭", "智利", "聖露西亞", "聖文森", "阿根廷", "祕魯", "秘魯", "格瑞那丁"],
         "非洲": ["史瓦帝尼"],
-        "未歸類": [] // 捕捉所有未涵蓋的邊緣案例
+        "未歸類": [] 
     };
 
     const loadHiddenIds = () => {
@@ -139,15 +203,21 @@
         localStorage.setItem('pathfinder_hidden_ids', JSON.stringify(Array.from(hiddenIds)));
     };
 
-    // 核心邏輯：初始化地區過濾器並執行 Checksum (資料總和檢查碼)
-    const initRegionFilters = (data) => {
-        const counts = { "全部": data.length };
-        for (const region in regionDictionary) {
-            if (region !== "全部") counts[region] = 0;
-        }
+    // 初始化雙維度過濾器
+    const initFilters = (data) => {
+        // 1. 準備計數器
+        const categoryCounts = { "全部": data.length };
+        const regionCounts = { "全部": data.length };
+        
+        officialCategories.forEach(cat => { if(cat !== "全部") categoryCounts[cat] = 0; });
+        for (const region in regionDictionary) { if(region !== "全部") regionCounts[region] = 0; }
+        
+        // 額外捕捉未在官方列表中的例外類別
+        const extraCategories = new Set();
 
-        // 預處理資料，將每一筆計畫強制綁定一個洲別，確保數學總和絕對精確
+        // 2. 掃描資料，建立映射並計數
         data.forEach(item => {
+            // 處理地理板塊
             let matchedRegion = "未歸類";
             for (const [region, keywords] of Object.entries(regionDictionary)) {
                 if (region === '全部' || region === '未歸類') continue;
@@ -157,32 +227,73 @@
                 }
             }
             projectRegionMap[item.id] = matchedRegion;
-            counts[matchedRegion]++;
+            regionCounts[matchedRegion]++;
+
+            // 處理主題類別 (清理字串以利比對)
+            const rawCat = item.category.replace(/　/g, '').replace(/\s+/g, ' ');
+            let matchedCategory = "未歸類";
+            
+            if (rawCat.includes("年度旗艦計畫")) {
+                matchedCategory = "年度旗艦計畫";
+            } else {
+                // 嘗試匹配官方分類
+                const match = officialCategories.find(c => c !== "全部" && c !== "年度旗艦計畫" && rawCat.includes(c));
+                if (match) {
+                    matchedCategory = match;
+                } else {
+                    matchedCategory = rawCat; // 如果都不符合，保留原始字串
+                    extraCategories.add(rawCat);
+                }
+            }
+            
+            projectCategoryMap[item.id] = matchedCategory;
+            if (categoryCounts[matchedCategory] !== undefined) {
+                categoryCounts[matchedCategory]++;
+            } else {
+                categoryCounts[matchedCategory] = 1;
+            }
         });
 
-        const container = document.getElementById('regionFilters');
-        container.innerHTML = '<span>📍 快速板塊篩選：</span>'; 
-
-        for (const region in regionDictionary) {
-            // 如果未歸類項目為 0，則隱藏該按鈕，維持畫面專業度
-            if (region === '未歸類' && counts[region] === 0) continue;
-
+        // 3. 渲染「主題類別」按鈕
+        const catContainer = document.getElementById('categoryFilters');
+        const renderCategoryBtn = (catName, displayCatName = catName) => {
+            if (catName !== '全部' && (categoryCounts[catName] === 0 || categoryCounts[catName] === undefined)) return;
+            
             const btn = document.createElement('button');
-            
-            // 針對未歸類項目給予警告樣式
-            const btnClass = region === '未歸類' ? 'btn-region error' : 'btn-region';
-            btn.className = `${btnClass} ${region === '全部' ? 'active' : ''}`;
-            
-            // 將計畫數量精準寫入按鈕中
-            btn.innerText = `${region} (${counts[region]})`;
+            btn.className = `btn-filter cat-btn ${catName === '全部' ? 'active' : ''}`;
+            // 簡化顯示名稱，移除前面的羅馬數字讓版面更乾淨
+            const shortName = displayCatName.replace(/^\([一二三四五六七八九十]+\)/, '');
+            btn.innerText = `${shortName} (${categoryCounts[catName] || 0})`;
             
             btn.onclick = () => {
-                document.querySelectorAll('.btn-region').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                activeCategory = catName;
+                renderTable(document.getElementById('searchInput').value);
+            };
+            catContainer.appendChild(btn);
+        };
+
+        officialCategories.forEach(cat => renderCategoryBtn(cat));
+        extraCategories.forEach(cat => renderCategoryBtn(cat)); // 渲染未預期的例外類別
+
+        // 4. 渲染「地理板塊」按鈕
+        const regContainer = document.getElementById('regionFilters');
+        for (const region in regionDictionary) {
+            if (region === '未歸類' && regionCounts[region] === 0) continue;
+            
+            const btn = document.createElement('button');
+            const btnClass = region === '未歸類' ? 'btn-filter reg-btn error' : 'btn-filter reg-btn';
+            btn.className = `${btnClass} ${region === '全部' ? 'active' : ''}`;
+            btn.innerText = `${region} (${regionCounts[region]})`;
+            
+            btn.onclick = () => {
+                document.querySelectorAll('.reg-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 activeRegion = region;
                 renderTable(document.getElementById('searchInput').value);
             };
-            container.appendChild(btn);
+            regContainer.appendChild(btn);
         }
     };
 
@@ -228,7 +339,7 @@
             rawData = data;
             document.getElementById('totalCount').innerText = rawData.length;
             loadHiddenIds();
-            initRegionFilters(rawData); // 將資料傳入以精算各區數量
+            initFilters(rawData); 
             detectMissingIds(rawData);
             renderTable();
         })
@@ -244,14 +355,21 @@
         const keyword = searchKeyword.toLowerCase();
 
         rawData.forEach(item => {
+            // 邏輯閘 1：隱藏狀態
             const isHidden = hiddenIds.has(item.id);
             if (!isViewingHidden && isHidden) return; 
             if (isViewingHidden && !isHidden) return; 
 
+            // 邏輯閘 2：關鍵字搜尋
             const searchableText = `${item.project_name} ${item.city} ${item.theme} ${item.description}`.toLowerCase();
             if (keyword && !searchableText.includes(keyword)) return;
 
-            // 高效的板塊過濾：直接比對預處理好的 projectRegionMap，不再每次重新掃描字串
+            // 邏輯閘 3：主題類別過濾 (AND 邏輯)
+            if (activeCategory !== '全部') {
+                if (projectCategoryMap[item.id] !== activeCategory) return;
+            }
+
+            // 邏輯閘 4：地理板塊過濾 (AND 邏輯)
             if (activeRegion !== '全部') {
                 if (projectRegionMap[item.id] !== activeRegion) return;
             }
