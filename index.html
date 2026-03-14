@@ -15,6 +15,8 @@
             --purple-color: #8e44ad;
             --bg-color: #f8f9fa;
             --border-color: #dee2e6;
+            --alert-bg: #fdf2e9;
+            --alert-border: #e67e22;
         }
 
         body {
@@ -39,7 +41,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
             padding-bottom: 15px;
             border-bottom: 2px solid var(--border-color);
         }
@@ -80,7 +82,6 @@
             justify-content: center;
         }
 
-        /* 控制面板按鈕樣式 */
         .btn-toggle { background-color: var(--warning-color); color: white; }
         .btn-toggle:hover { background-color: #d68910; }
         .btn-reset { background-color: var(--secondary-color); color: white; }
@@ -88,7 +89,6 @@
         .btn-official { background-color: var(--info-color); color: white; }
         .btn-official:hover { background-color: #2980b9; }
         
-        /* 表格內操作按鈕樣式 */
         .btn-hide { background-color: var(--accent-color); color: white; padding: 5px 10px; font-size: 12px;}
         .btn-hide:hover { background-color: #c0392b; }
         .btn-unhide { background-color: var(--purple-color); color: white; padding: 5px 10px; font-size: 12px;}
@@ -106,49 +106,37 @@
             color: #495057;
         }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 14px;
+        /* 異常偵測面板樣式 */
+        .missing-alert {
+            background-color: var(--alert-bg);
+            border-left: 5px solid var(--alert-border);
+            padding: 15px 20px;
+            margin-bottom: 25px;
+            border-radius: 4px;
+            display: none; /* 預設隱藏，由程式邏輯判斷是否顯示 */
         }
-
-        th, td {
-            padding: 12px 15px;
-            text-align: left;
-            border-bottom: 1px solid var(--border-color);
-            vertical-align: top;
-        }
-
-        th {
-            background-color: var(--primary-color);
-            color: white;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-
-        tr:hover { background-color: #f8f9fa; }
         
-        .tag {
+        .missing-alert h3 {
+            margin: 0 0 10px 0;
+            color: #d35400;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+        }
+
+        .missing-tag {
             display: inline-block;
-            padding: 3px 8px;
-            border-radius: 3px;
-            background-color: #e3f2fd;
-            color: #1976d2;
-            font-size: 11px;
-            margin-bottom: 5px;
-            margin-right: 5px;
+            background-color: #fad7a1;
+            color: #b93b00;
+            padding: 4px 8px;
+            border-radius: 4px;
+            margin: 0 6px 6px 0;
+            font-weight: bold;
+            font-family: monospace;
+            font-size: 13px;
+            border: 1px solid #f39c12;
         }
 
-        .description-cell { max-width: 350px; }
-
-        /* 行動態消失的過場動畫 */
-        .fade-out {
-            opacity: 0;
-            transform: translateX(20px);
-            transition: opacity 0.3s, transform 0.3s;
-        }
-        
         .mode-indicator {
             display: none;
             background-color: var(--warning-color);
@@ -159,6 +147,15 @@
             margin-bottom: 15px;
             border-radius: 4px;
         }
+
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border-color); vertical-align: top; }
+        th { background-color: var(--primary-color); color: white; position: sticky; top: 0; z-index: 10; }
+        tr:hover { background-color: #f8f9fa; }
+        
+        .tag { display: inline-block; padding: 3px 8px; border-radius: 3px; background-color: #e3f2fd; color: #1976d2; font-size: 11px; margin-bottom: 5px; margin-right: 5px; }
+        .description-cell { max-width: 350px; }
+        .fade-out { opacity: 0; transform: translateX(20px); transition: opacity 0.3s, transform 0.3s; }
     </style>
 </head>
 <body>
@@ -175,6 +172,11 @@
         </div>
     </div>
     
+    <div id="missingAlert" class="missing-alert">
+        <h3>⚠️ 數據探勘異常報告：官方系統跳號 / 已隱藏之計畫編號</h3>
+        <div id="missingIdsList"></div>
+    </div>
+
     <div id="modeIndicator" class="mode-indicator">⚠️ 目前處於「隱藏名單」檢視模式。此處顯示的皆為您已剔除的計畫。</div>
 
     <table>
@@ -196,25 +198,63 @@
 </div>
 
 <script>
-    // 核心資料狀態管理
     let rawData = [];
     let hiddenIds = new Set();
-    let isViewingHidden = false; // 狀態機：控制目前的檢視模式
+    let isViewingHidden = false; 
 
-    // 1. 初始化：讀取 LocalStorage 中的隱藏清單
     const loadHiddenIds = () => {
         const saved = localStorage.getItem('pathfinder_hidden_ids');
-        if (saved) {
-            hiddenIds = new Set(JSON.parse(saved));
-        }
+        if (saved) hiddenIds = new Set(JSON.parse(saved));
     };
 
-    // 2. 儲存隱藏清單至 LocalStorage
     const saveHiddenIds = () => {
         localStorage.setItem('pathfinder_hidden_ids', JSON.stringify(Array.from(hiddenIds)));
     };
 
-    // 3. 載入 JSON (JavaScript Object Notation) 資料
+    // 異常偵測演算法核心
+    const detectMissingIds = (data) => {
+        const groups = {};
+        
+        data.forEach(item => {
+            const parts = item.id.split('-');
+            if (parts.length >= 3) {
+                // 擷取前綴 (例如: K-10, I-8)
+                const prefix = parts.slice(0, parts.length - 1).join('-');
+                // 擷取最後的流水號數字
+                const num = parseInt(parts[parts.length - 1], 10);
+                
+                if (!groups[prefix]) groups[prefix] = [];
+                groups[prefix].push(num);
+            }
+        });
+
+        const missingIds = [];
+        
+        for (const [prefix, numbers] of Object.entries(groups)) {
+            const max = Math.max(...numbers);
+            // 掃描 1 到該群組最大值之間所有缺失的數字
+            for (let i = 1; i <= max; i++) {
+                if (!numbers.includes(i)) {
+                    missingIds.push(`${prefix}-${i}`);
+                }
+            }
+        }
+
+        // 渲染至 UI (User Interface) 面板
+        if (missingIds.length > 0) {
+            const alertBox = document.getElementById('missingAlert');
+            const listContainer = document.getElementById('missingIdsList');
+            alertBox.style.display = 'block';
+            
+            missingIds.forEach(id => {
+                const span = document.createElement('span');
+                span.className = 'missing-tag';
+                span.innerText = id;
+                listContainer.appendChild(span);
+            });
+        }
+    };
+
     fetch('pathfinder_data.json')
         .then(res => {
             if (!res.ok) throw new Error("無法讀取 JSON 檔案，請確認伺服器狀態與檔案路徑。");
@@ -224,6 +264,7 @@
             rawData = data;
             document.getElementById('totalCount').innerText = rawData.length;
             loadHiddenIds();
+            detectMissingIds(rawData); // 啟動斷層掃描
             renderTable();
         })
         .catch(err => {
@@ -231,22 +272,17 @@
             document.getElementById('tableBody').innerHTML = `<tr><td colspan="8" style="text-align:center; color:red;">資料載入失敗：${err.message}</td></tr>`;
         });
 
-    // 4. 渲染表格的核心邏輯
     const renderTable = (searchKeyword = '') => {
         const tbody = document.getElementById('tableBody');
         tbody.innerHTML = '';
         let displayCount = 0;
-
         const keyword = searchKeyword.toLowerCase();
 
         rawData.forEach(item => {
             const isHidden = hiddenIds.has(item.id);
+            if (!isViewingHidden && isHidden) return; 
+            if (isViewingHidden && !isHidden) return; 
 
-            // 嚴格的狀態過濾邏輯
-            if (!isViewingHidden && isHidden) return; // 一般模式：不顯示已隱藏的
-            if (isViewingHidden && !isHidden) return; // 隱藏模式：只顯示已隱藏的
-
-            // 關鍵字搜尋過濾
             const searchableText = `${item.project_name} ${item.city} ${item.theme} ${item.description}`.toLowerCase();
             if (keyword && !searchableText.includes(keyword)) return;
 
@@ -259,10 +295,8 @@
                 ? `<a href="${item.download_url}" target="_blank" class="btn-download">下載</a>` 
                 : `<span class="btn-download disabled">無</span>`;
 
-            // 整理類別標籤，修剪多餘的空白
             const cleanCategory = item.category.replace(/　/g, '').replace(/\s+/g, ' ');
             
-            // 根據當前模式動態生成操作按鈕
             const actionBtnHtml = isViewingHidden
                 ? `<button class="btn btn-unhide" onclick="unhideRow('${item.id}')">取消隱藏</button>`
                 : `<button class="btn btn-hide" onclick="hideRow('${item.id}')">隱藏</button>`;
@@ -286,7 +320,6 @@
         document.getElementById('displayCount').innerText = displayCount;
     };
 
-    // 5. 隱藏單一計畫
     window.hideRow = (id) => {
         const row = document.getElementById(`row-${id}`);
         row.classList.add('fade-out');
@@ -295,19 +328,16 @@
         setTimeout(() => { renderTable(document.getElementById('searchInput').value); }, 300);
     };
 
-    // 6. 取消隱藏單一計畫
     window.unhideRow = (id) => {
         const row = document.getElementById(`row-${id}`);
-        row.classList.add('fade-out'); // 重用淡出動畫，維持視覺一致性
+        row.classList.add('fade-out'); 
         hiddenIds.delete(id);
         saveHiddenIds();
         setTimeout(() => { renderTable(document.getElementById('searchInput').value); }, 300);
     };
 
-    // 7. 切換檢視模式
     document.getElementById('toggleHiddenBtn').addEventListener('click', () => {
         isViewingHidden = !isViewingHidden;
-        
         const btn = document.getElementById('toggleHiddenBtn');
         const indicator = document.getElementById('modeIndicator');
         
@@ -320,16 +350,13 @@
             btn.style.backgroundColor = "var(--warning-color)";
             indicator.style.display = "none";
         }
-        
         renderTable(document.getElementById('searchInput').value);
     });
 
-    // 8. 監聽搜尋輸入
     document.getElementById('searchInput').addEventListener('input', (e) => {
         renderTable(e.target.value);
     });
 
-    // 9. 清空所有隱藏名單
     document.getElementById('resetHiddenBtn').addEventListener('click', () => {
         if(confirm("這將會清除您所有的隱藏紀錄，確定執行？")) {
             hiddenIds.clear();
