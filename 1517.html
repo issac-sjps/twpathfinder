@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>海外圓夢計畫 - 15-17歲決策面板</title>
+    <style>
+        :root {
+            --primary-color: #2980b9; /* 針對 15-17 歲換上較為活潑的藍色系 */
+            --secondary-color: #34495e;
+            --accent-color: #e74c3c;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --info-color: #3498db;
+            --purple-color: #8e44ad;
+            --domain-color: #16a085;
+            --bg-color: #f8f9fa;
+            --border-color: #dee2e6;
+            --alert-bg: #fdf2e9;
+            --alert-border: #e67e22;
+        }
+
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg-color); color: #333; line-height: 1.6; margin: 0; padding: 20px; }
+        .container { max-width: 1450px; margin: auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .header-section { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid var(--border-color); }
+        h1 { margin: 0; color: var(--primary-color); font-size: 24px; }
+
+        .control-panel { display: flex; gap: 12px; align-items: center; }
+        input[type="text"] { padding: 10px 15px; width: 280px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; transition: border-color 0.3s; }
+        input[type="text"]:focus { outline: none; border-color: var(--primary-color); }
+
+        .btn { padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: bold; transition: all 0.2s; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
+        .btn-toggle { background-color: var(--warning-color); color: white; }
+        .btn-toggle:hover { background-color: #d68910; }
+        .btn-reset { background-color: var(--secondary-color); color: white; }
+        .btn-reset:hover { background-color: #1a252f; }
+        .btn-official { background-color: var(--info-color); color: white; }
+        .btn-official:hover { background-color: #21618c; }
+        .btn-switch { background-color: #8e44ad; color: white; }
+        .btn-switch:hover { background-color: #732d91; }
+        .btn-hide { background-color: var(--accent-color); color: white; padding: 5px 10px; font-size: 12px;}
+        .btn-hide:hover { background-color: #c0392b; }
+        .btn-unhide { background-color: var(--purple-color); color: white; padding: 5px 10px; font-size: 12px;}
+        .btn-unhide:hover { background-color: #732d91; }
+        .btn-download { background-color: var(--success-color); color: white; padding: 6px 12px; border-radius: 4px; font-size: 12px; text-decoration: none; display: inline-block;}
+        .btn-download:hover { background-color: #219653; }
+        .btn-download.disabled { background-color: #95a5a6; cursor: not-allowed; pointer-events: none; }
+
+        .stats-badge { background-color: #e9ecef; padding: 5px 10px; border-radius: 12px; font-size: 14px; color: #495057; }
+
+        .missing-alert { background-color: var(--alert-bg); border-left: 5px solid var(--alert-border); padding: 15px 20px; margin-bottom: 20px; border-radius: 4px; display: none; }
+        .missing-alert h3 { margin: 0 0 10px 0; color: #d35400; font-size: 16px; display: flex; align-items: center; }
+        .missing-tag { display: inline-block; background-color: #fad7a1; color: #b93b00; padding: 4px 8px; border-radius: 4px; margin: 0 6px 6px 0; font-weight: bold; font-family: monospace; font-size: 13px; border: 1px solid #f39c12; }
+
+        .mode-indicator { display: none; background-color: var(--warning-color); color: white; text-align: center; padding: 8px; font-weight: bold; margin-bottom: 15px; border-radius: 4px; }
+
+        .filter-group { background-color: #f1f5f8; border-radius: 6px; margin-bottom: 12px; padding: 12px 15px; display: flex; align-items: flex-start; flex-wrap: wrap; gap: 10px; transition: all 0.3s; }
+        .filter-label { font-weight: bold; color: var(--secondary-color); margin-right: 5px; white-space: nowrap; display: flex; align-items: center; padding-top: 6px; width: 110px; }
+        .filter-buttons-container { display: flex; flex-wrap: wrap; gap: 8px; flex: 1; }
+
+        .btn-filter { background-color: white; color: var(--secondary-color); border: 1px solid #bdc3c7; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+        .btn-filter:hover { border-color: var(--info-color); color: var(--info-color); }
+        .btn-filter.active { background-color: var(--info-color); color: white; border-color: var(--info-color); font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        
+        .btn-domain { border-color: #a2d9ce; }
+        .btn-domain:hover { border-color: var(--domain-color); color: var(--domain-color); }
+        .btn-domain.active { background-color: var(--domain-color); border-color: var(--domain-color); color: white; }
+
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border-color); vertical-align: top; }
+        th { background-color: var(--primary-color); color: white; position: sticky; top: 0; z-index: 10; }
+        tr:hover { background-color: #f8f9fa; }
+        
+        .tag { display: inline-block; padding: 3px 8px; border-radius: 3px; font-size: 11px; margin-bottom: 5px; margin-right: 5px; }
+        .tag-cat { background-color: #e3f2fd; color: #1976d2; }
+        .tag-theme { background-color: #e8f8f5; color: #1abc9c; }
+        .tag-domain { background-color: #fef9e7; color: #d4ac0d; font-weight: bold; border: 1px solid #f1c40f;}
+        
+        .description-cell { max-width: 350px; }
+        .fade-out { opacity: 0; transform: translateX(20px); transition: opacity 0.3s, transform 0.3s; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header-section">
+        <h1>海外圓夢計畫決策面板 <span style="color:#e74c3c;">(15-17歲組)</span></h1>
+        <div class="control-panel">
+            <span class="stats-badge">顯示：<span id="displayCount">0</span> / 當前模式總計：<span id="totalCount">0</span></span>
+            <input type="text" id="searchInput" placeholder="輸入關鍵字 (例如: 語言, 見習)...">
+            <button class="btn btn-toggle" id="toggleHiddenBtn">檢視隱藏計畫</button>
+            <button class="btn btn-reset" id="resetHiddenBtn">清空隱藏名單</button>
+            <a href="index.html" class="btn btn-switch">切換至 18-30 歲組</a>
+        </div>
+    </div>
+    
+    <div id="missingAlert" class="missing-alert">
+        <h3>⚠️ 數據探勘異常報告：官方系統跳號 / 已隱藏之計畫編號</h3>
+        <div id="missingIdsList"></div>
+    </div>
+
+    <div class="filter-group">
+        <div class="filter-label">💡 核心領域：</div>
+        <div class="filter-buttons-container" id="domainFilters"></div>
+    </div>
+
+    <div class="filter-group">
+        <div class="filter-label">🏷️ 官方主題：</div>
+        <div class="filter-buttons-container" id="categoryFilters"></div>
+    </div>
+
+    <div class="filter-group" style="margin-bottom: 20px;">
+        <div class="filter-label">📍 地理板塊：</div>
+        <div class="filter-buttons-container" id="regionFilters"></div>
+    </div>
+
+    <div id="modeIndicator" class="mode-indicator">⚠️ 目前處於「隱藏名單」檢視模式。上方按鈕數量顯示為您已剔除的計畫總和。</div>
+
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 8%">編號</th>
+                <th style="width: 15%">計畫名稱</th>
+                <th style="width: 10%">城市</th>
+                <th style="width: 17%">領域與分類</th>
+                <th style="width: 5%">名額</th>
+                <th style="width: 30%">簡述</th>
+                <th style="width: 7%">簡章</th>
+                <th style="width: 8%">操作</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody">
+        </tbody>
+    </table>
+</div>
+
+<script>
+    let rawData = [];
+    let hiddenIds = new Set();
+    let isViewingHidden = false; 
+    
+    let activeDomain = '全部';
+    let activeCategory = '全部';
+    let activeRegion = '全部'; 
+    
+    let projectDomainMap = {};
+    let projectRegionMap = {}; 
+    let projectCategoryMap = {};
+
+    const domainDictionary = {
+        "教育與學術": ["教育", "學校", "教學", "教案", "學生", "學術", "課後輔導", "師資", "雙語", "研討會", "研究", "大學", "中學", "小學", "教室", "校園"],
+        "科技與工程": ["科技", "數位", "ai", "人工智慧", "半導體", "量子", "機器人", "工程", "資訊", "網路", "軟體", "系統", "資安", "航太", "通訊", "大數據", "雲端", "網頁", "智慧", "數據", "演算法", "程式"],
+        "環境與生態": ["環境", "生態", "保育", "永續", "氣候", "淨零", "碳", "海洋", "動物", "農業", "雨林", "水質", "減碳", "綠能", "自然", "環保", "地球"],
+        "外交與公共事務": ["外交", "政策", "人權", "民主", "治理", "智庫", "倡議", "公共", "社會", "原民", "平權", "政府", "法律", "志工", "社區", "地方創生", "跨國合作", "國際組織"],
+        "藝文與設計": ["藝術", "文化", "博物館", "策展", "設計", "影音", "媒體", "歷史", "文創", "文學", "攝影", "馬戲", "音樂", "舞蹈", "建築", "典藏", "古籍", "表演", "自媒體", "影像", "展覽"],
+        "商業與新創": ["商業", "行銷", "新創", "創業", "金融", "經濟", "產業", "投資", "企劃", "商務", "品牌", "市場", "物流", "商機", "轉型"],
+        "醫療與公衛": ["醫療", "公衛", "醫學", "衛生", "照護", "醫院", "生醫", "疾病", "防疫", "細胞", "健康", "臨床"]
+    };
+
+    const officialCategories = [
+        "全部", "年度旗艦計畫", "(一)國際組織、基金會、智庫見習", "(三)新創團隊及職能培力",
+        "(四)青年地方創生及社區機構", "(五)文創機構", "(六)青年行動及服務",
+        "(七)僑胞海外公共參與", "(八)專業職能培訓", "(九)科技網絡及數位服務"
+    ];
+
+    const regionDictionary = {
+        "全部": [],
+        "亞洲": ["日本", "韓國", "印度", "印尼", "新加坡", "泰國", "沖繩", "北海道"],
+        "大洋洲": ["澳洲", "澳大利亞", "雪梨", "墨爾本", "吐瓦魯", "帛琉", "布里斯本"], 
+        "歐洲": ["法國", "義大利", "斯洛伐克", "捷克", "保加利亞", "荷蘭", "愛爾蘭", "德國", "比利時", "瑞典", "冰島", "奧地利", "波蘭", "斯洛維尼亞", "葡萄牙", "西班牙", "瑞士", "英國", "梵蒂岡"],
+        "北美洲": ["美國", "加拿大", "墨西哥", "紐約", "加州", "華盛頓"],
+        "中南美洲": ["貝里斯", "瓜地馬拉", "巴拉圭", "智利", "聖露西亞", "聖文森", "阿根廷", "祕魯", "秘魯", "格瑞那丁"],
+        "非洲": ["史瓦帝尼"],
+        "未歸類": [] 
+    };
+
+    // 核心隔離：改用專屬的 localStorage 鍵值，避免與 18-30 歲組互相污染
+    const loadHiddenIds = () => {
+        const saved = localStorage.getItem('pathfinder_hidden_ids_1517');
+        if (saved) hiddenIds = new Set(JSON.parse(saved));
+    };
+
+    const saveHiddenIds = () => {
+        localStorage.setItem('pathfinder_hidden_ids_1517', JSON.stringify(Array.from(hiddenIds)));
+    };
+
+    const updateFilterCounts = () => {
+        const domainCounts = { "全部": 0, "其他": 0 };
+        const categoryCounts = { "全部": 0 };
+        const regionCounts = { "全部": 0 };
+        let extraCategoriesCount = {};
+
+        for (const dom in domainDictionary) { domainCounts[dom] = 0; }
+        officialCategories.forEach(cat => { if(cat !== "全部") categoryCounts[cat] = 0; });
+        for (const reg in regionDictionary) { if(reg !== "全部") regionCounts[reg] = 0; }
+
+        rawData.forEach(item => {
+            const isHidden = hiddenIds.has(item.id);
+            if (!isViewingHidden && isHidden) return;
+            if (isViewingHidden && !isHidden) return;
+
+            domainCounts["全部"]++;
+            categoryCounts["全部"]++;
+            regionCounts["全部"]++;
+
+            const dom = projectDomainMap[item.id];
+            if (domainCounts[dom] !== undefined) domainCounts[dom]++;
+
+            const cat = projectCategoryMap[item.id];
+            if (categoryCounts[cat] !== undefined) {
+                categoryCounts[cat]++;
+            } else {
+                extraCategoriesCount[cat] = (extraCategoriesCount[cat] || 0) + 1;
+            }
+
+            const reg = projectRegionMap[item.id];
+            if (regionCounts[reg] !== undefined) regionCounts[reg]++;
+        });
+
+        document.getElementById('totalCount').innerText = domainCounts["全部"];
+        let needsTableReset = false;
+
+        const updateBtnGroup = (selector, countsMap, activeVar, resetCallback, isCat = false) => {
+            document.querySelectorAll(selector).forEach(btn => {
+                const val = btn.getAttribute('data-val');
+                const count = isCat ? (countsMap[val] || extraCategoriesCount[val] || 0) : (countsMap[val] || 0);
+                let displayVal = val;
+                if (isCat) displayVal = val.replace(/^\([一二三四五六七八九十]+\)/, '');
+                
+                btn.innerText = `${displayVal} (${count})`;
+
+                if (count === 0 && val !== '全部') {
+                    btn.style.display = 'none';
+                    if (activeVar === val) {
+                        btn.classList.remove('active');
+                        resetCallback();
+                        needsTableReset = true;
+                    }
+                } else {
+                    btn.style.display = 'inline-block';
+                }
+            });
+        };
+
+        updateBtnGroup('.dom-btn', domainCounts, activeDomain, () => {
+            activeDomain = '全部';
+            document.querySelector('.dom-btn[data-val="全部"]').classList.add('active');
+        }, false);
+
+        updateBtnGroup('.cat-btn', categoryCounts, activeCategory, () => {
+            activeCategory = '全部';
+            document.querySelector('.cat-btn[data-val="全部"]').classList.add('active');
+        }, true);
+
+        updateBtnGroup('.reg-btn', regionCounts, activeRegion, () => {
+            activeRegion = '全部';
+            document.querySelector('.reg-btn[data-val="全部"]').classList.add('active');
+        }, false);
+
+        if (needsTableReset) {
+            renderTable(document.getElementById('searchInput').value);
+        }
+    };
+
+    const initFilters = (data) => {
+        const extraCategories = new Set();
+
+        data.forEach(item => {
+            let matchedDomain = "其他";
+            let maxScore = 0;
+            const textToSearch = `${item.theme} ${item.description}`.toLowerCase();
+            
+            for (const [domain, keywords] of Object.entries(domainDictionary)) {
+                let score = 0;
+                keywords.forEach(k => {
+                    if (k === 'ai') {
+                        const matches = textToSearch.match(/(?:^|[^a-z])ai(?:[^a-z]|$)/ig);
+                        if (matches) score += matches.length;
+                    } else {
+                        const matches = textToSearch.match(new RegExp(k, 'ig'));
+                        if (matches) score += matches.length;
+                    }
+                });
+                if (score > maxScore) {
+                    maxScore = score;
+                    matchedDomain = domain;
+                }
+            }
+            projectDomainMap[item.id] = matchedDomain;
+
+            let matchedRegion = "未歸類";
+            for (const [region, keywords] of Object.entries(regionDictionary)) {
+                if (region === '全部' || region === '未歸類') continue;
+                if (keywords.some(k => item.city.includes(k))) {
+                    matchedRegion = region;
+                    break;
+                }
+            }
+            projectRegionMap[item.id] = matchedRegion;
+
+            const rawCat = item.category.replace(/　/g, '').replace(/\s+/g, ' ');
+            let matchedCategory = "未歸類";
+            
+            if (rawCat.includes("年度旗艦計畫")) {
+                matchedCategory = "年度旗艦計畫";
+            } else {
+                const match = officialCategories.find(c => c !== "全部" && c !== "年度旗艦計畫" && rawCat.includes(c));
+                if (match) {
+                    matchedCategory = match;
+                } else {
+                    matchedCategory = rawCat;
+                    extraCategories.add(rawCat);
+                }
+            }
+            projectCategoryMap[item.id] = matchedCategory;
+        });
+
+        const createBtn = (containerId, val, btnClass, clickHandler) => {
+            const container = document.getElementById(containerId);
+            const btn = document.createElement('button');
+            btn.className = `btn-filter ${btnClass} ${val === '全部' ? 'active' : ''}`;
+            btn.setAttribute('data-val', val);
+            btn.onclick = () => {
+                document.querySelectorAll(`.${btnClass.split(' ')[0]}`).forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                clickHandler(val);
+                renderTable(document.getElementById('searchInput').value);
+            };
+            container.appendChild(btn);
+        };
+
+        createBtn('domainFilters', '全部', 'dom-btn btn-domain', v => activeDomain = v);
+        for (const dom in domainDictionary) { createBtn('domainFilters', dom, 'dom-btn btn-domain', v => activeDomain = v); }
+        createBtn('domainFilters', '其他', 'dom-btn btn-domain', v => activeDomain = v);
+
+        officialCategories.forEach(cat => createBtn('categoryFilters', cat, 'cat-btn', v => activeCategory = v));
+        extraCategories.forEach(cat => createBtn('categoryFilters', cat, 'cat-btn', v => activeCategory = v));
+
+        createBtn('regionFilters', '全部', 'reg-btn', v => activeRegion = v);
+        for (const reg in regionDictionary) { if (reg !== '全部') createBtn('regionFilters', reg, 'reg-btn', v => activeRegion = v); }
+
+        updateFilterCounts();
+    };
+
+    const detectMissingIds = (data) => {
+        const groups = {};
+        data.forEach(item => {
+            const parts = item.id.split('-');
+            if (parts.length >= 3) {
+                const prefix = parts.slice(0, parts.length - 1).join('-');
+                const num = parseInt(parts[parts.length - 1], 10);
+                if (!groups[prefix]) groups[prefix] = [];
+                groups[prefix].push(num);
+            }
+        });
+
+        const missingIds = [];
+        for (const [prefix, numbers] of Object.entries(groups)) {
+            const max = Math.max(...numbers);
+            for (let i = 1; i <= max; i++) {
+                if (!numbers.includes(i)) missingIds.push(`${prefix}-${i}`);
+            }
+        }
+
+        if (missingIds.length > 0) {
+            const alertBox = document.getElementById('missingAlert');
+            const listContainer = document.getElementById('missingIdsList');
+            alertBox.style.display = 'block';
+            missingIds.forEach(id => {
+                const span = document.createElement('span');
+                span.className = 'missing-tag';
+                span.innerText = id;
+                listContainer.appendChild(span);
+            });
+        }
+    };
+
+    // 核心資料源隔離：指定讀取 15-17 歲的 JSON 檔案
+    fetch('pathfinder_data_1517.json')
+        .then(res => res.json())
+        .then(data => {
+            rawData = data;
+            loadHiddenIds();
+            initFilters(rawData); 
+            detectMissingIds(rawData);
+            renderTable();
+        })
+        .catch(err => {
+            console.error(err);
+            document.getElementById('tableBody').innerHTML = `<tr><td colspan="8" style="text-align:center; color:red;">資料載入失敗</td></tr>`;
+        });
+
+    const renderTable = (searchKeyword = '') => {
+        const tbody = document.getElementById('tableBody');
+        tbody.innerHTML = '';
+        let displayCount = 0;
+        const keyword = searchKeyword.toLowerCase();
+
+        rawData.forEach(item => {
+            const isHidden = hiddenIds.has(item.id);
+            if (!isViewingHidden && isHidden) return; 
+            if (isViewingHidden && !isHidden) return; 
+
+            const searchableText = `${item.project_name} ${item.city} ${item.theme} ${item.description}`.toLowerCase();
+            if (keyword && !searchableText.includes(keyword)) return;
+
+            if (activeDomain !== '全部' && projectDomainMap[item.id] !== activeDomain) return;
+            if (activeCategory !== '全部' && projectCategoryMap[item.id] !== activeCategory) return;
+            if (activeRegion !== '全部' && projectRegionMap[item.id] !== activeRegion) return;
+
+            displayCount++;
+
+            const tr = document.createElement('tr');
+            tr.id = `row-${item.id}`;
+            
+            const downloadHtml = item.download_url 
+                ? `<a href="${item.download_url}" target="_blank" class="btn-download">下載</a>` 
+                : `<span class="btn-download disabled">無</span>`;
+
+            const cleanCategory = item.category.replace(/　/g, '').replace(/\s+/g, ' ');
+            
+            const actionBtnHtml = isViewingHidden
+                ? `<button class="btn btn-unhide" onclick="unhideRow('${item.id}')">取消隱藏</button>`
+                : `<button class="btn btn-hide" onclick="hideRow('${item.id}')">隱藏</button>`;
+
+            const domainBadge = `<span class="tag tag-domain">★ ${projectDomainMap[item.id]}</span>`;
+
+            tr.innerHTML = `
+                <td><strong>${item.id}</strong></td>
+                <td><strong>${item.project_name}</strong><br><small style="color:#7f8c8d">${item.duration}</small></td>
+                <td>${item.city}</td>
+                <td>
+                    ${domainBadge}<br>
+                    <span class="tag tag-cat">${cleanCategory}</span><br>
+                    <span class="tag tag-theme">${item.theme}</span>
+                </td>
+                <td style="text-align:center;">${item.quota}</td>
+                <td class="description-cell">${item.description}</td>
+                <td>${downloadHtml}</td>
+                <td>${actionBtnHtml}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        document.getElementById('displayCount').innerText = displayCount;
+    };
+
+    window.hideRow = (id) => {
+        const row = document.getElementById(`row-${id}`);
+        row.classList.add('fade-out');
+        hiddenIds.add(id);
+        saveHiddenIds();
+        updateFilterCounts();
+        setTimeout(() => { renderTable(document.getElementById('searchInput').value); }, 300);
+    };
+
+    window.unhideRow = (id) => {
+        const row = document.getElementById(`row-${id}`);
+        row.classList.add('fade-out'); 
+        hiddenIds.delete(id);
+        saveHiddenIds();
+        updateFilterCounts();
+        setTimeout(() => { renderTable(document.getElementById('searchInput').value); }, 300);
+    };
+
+    document.getElementById('toggleHiddenBtn').addEventListener('click', () => {
+        isViewingHidden = !isViewingHidden;
+        const btn = document.getElementById('toggleHiddenBtn');
+        const indicator = document.getElementById('modeIndicator');
+        
+        if (isViewingHidden) {
+            btn.innerText = "返回一般檢視";
+            btn.style.backgroundColor = "var(--accent-color)";
+            indicator.style.display = "block";
+        } else {
+            btn.innerText = "檢視隱藏計畫";
+            btn.style.backgroundColor = "var(--warning-color)";
+            indicator.style.display = "none";
+        }
+        updateFilterCounts();
+        renderTable(document.getElementById('searchInput').value);
+    });
+
+    document.getElementById('searchInput').addEventListener('input', (e) => {
+        renderTable(e.target.value);
+    });
+
+    document.getElementById('resetHiddenBtn').addEventListener('click', () => {
+        if(confirm("這將會清除您所有的隱藏紀錄，確定執行？")) {
+            hiddenIds.clear();
+            saveHiddenIds();
+            updateFilterCounts();
+            renderTable(document.getElementById('searchInput').value);
+        }
+    });
+</script>
+
+</body>
+</html>
