@@ -86,7 +86,7 @@
         <h1>海外圓夢計畫決策面板</h1>
         <div class="control-panel">
             <span class="stats-badge">顯示：<span id="displayCount">0</span> / 總計：<span id="totalCount">0</span></span>
-            <input type="text" id="searchInput" placeholder="輸入關鍵字 (例如: AI, 澳洲)...">
+            <input type="text" id="searchInput" placeholder="輸入關鍵字 (例如: 澳洲, 實驗室)...">
             <button class="btn btn-toggle" id="toggleHiddenBtn">檢視隱藏計畫</button>
             <button class="btn btn-reset" id="resetHiddenBtn">清空隱藏名單</button>
             <a href="https://twpathfinder.org/overview1830" target="_blank" class="btn btn-official">官方網站找尋</a>
@@ -101,19 +101,19 @@
     <div class="filter-group">
         <div class="filter-label">💡 核心領域：</div>
         <div class="filter-buttons-container" id="domainFilters">
-            </div>
+        </div>
     </div>
 
     <div class="filter-group">
         <div class="filter-label">🏷️ 官方主題：</div>
         <div class="filter-buttons-container" id="categoryFilters">
-            </div>
+        </div>
     </div>
 
     <div class="filter-group" style="margin-bottom: 20px;">
         <div class="filter-label">📍 地理板塊：</div>
         <div class="filter-buttons-container" id="regionFilters">
-            </div>
+        </div>
     </div>
 
     <div id="modeIndicator" class="mode-indicator">⚠️ 目前處於「隱藏名單」檢視模式。此處顯示的皆為您已剔除的計畫。</div>
@@ -141,30 +141,35 @@
     let hiddenIds = new Set();
     let isViewingHidden = false; 
     
-    // 狀態機：追蹤三維度過濾器
     let activeDomain = '全部';
     let activeCategory = '全部';
     let activeRegion = '全部'; 
     
-    // 全域映射表
     let projectDomainMap = {};
     let projectRegionMap = {}; 
     let projectCategoryMap = {};
 
-    // 1. 核心領域字典 (利用語意分析)
     const domainDictionary = {
-        "全部": [],
+        "教育與學術": ["教育", "學校", "教學", "教案", "學生", "學術", "課後輔導", "師資", "雙語", "研討會", "研究"],
         "科技與工程": ["科技", "數位", "ai", "人工智慧", "半導體", "量子", "機器人", "工程", "資訊", "網路", "軟體", "系統", "資安", "航太", "通訊", "大數據", "雲端"],
         "環境與生態": ["環境", "生態", "保育", "永續", "氣候", "淨零", "碳", "海洋", "動物", "農業", "雨林", "水質", "減碳", "綠能", "自然", "環保"],
-        "教育與學術": ["教育", "學校", "教學", "教案", "學生", "學術", "課後輔導", "師資", "雙語", "研討會", "研究"],
         "外交與公共事務": ["外交", "政策", "人權", "民主", "治理", "智庫", "倡議", "公共", "社會", "原民", "平權", "政府", "法律", "志工"],
         "藝文與設計": ["藝術", "文化", "博物館", "策展", "設計", "影音", "媒體", "歷史", "文創", "文學", "攝影", "馬戲", "音樂", "舞蹈", "建築"],
         "商業與新創": ["商業", "行銷", "新創", "創業", "金融", "經濟", "產業", "投資", "企劃", "商務", "品牌", "市場", "物流"],
-        "醫療與公衛": ["醫療", "公衛", "醫學", "衛生", "照護", "醫院", "生醫", "疾病", "防疫", "細胞"],
-        "其他": [] 
+        "醫療與公衛": ["醫療", "公衛", "醫學", "衛生", "照護", "醫院", "生醫", "疾病", "防疫", "細胞"]
     };
 
-    // 2. 官方主題類別字典
+    // 建立絕對的執行權重陣列，放棄物件屬性的預設排序，將教育強制提昇為第一判定順位
+    const priorityEngine = [
+        "教育與學術",
+        "科技與工程",
+        "環境與生態",
+        "外交與公共事務",
+        "藝文與設計",
+        "商業與新創",
+        "醫療與公衛"
+    ];
+
     const officialCategories = [
         "全部",
         "年度旗艦計畫",
@@ -178,7 +183,6 @@
         "(九)科技網絡及數位服務"
     ];
 
-    // 3. 地理板塊字典
     const regionDictionary = {
         "全部": [],
         "亞洲": ["日本", "韓國", "印度", "印尼", "新加坡", "泰國", "沖繩", "北海道"],
@@ -200,32 +204,32 @@
     };
 
     const initFilters = (data) => {
-        const domainCounts = { "全部": data.length };
+        const domainCounts = { "全部": data.length, "其他": 0 };
         const categoryCounts = { "全部": data.length };
         const regionCounts = { "全部": data.length };
         
-        for (const dom in domainDictionary) { if(dom !== "全部") domainCounts[dom] = 0; }
+        priorityEngine.forEach(dom => domainCounts[dom] = 0);
         officialCategories.forEach(cat => { if(cat !== "全部") categoryCounts[cat] = 0; });
         for (const reg in regionDictionary) { if(reg !== "全部") regionCounts[reg] = 0; }
         
         const extraCategories = new Set();
 
         data.forEach(item => {
-            // 處理核心領域 (Domain)
+            // 核心領域判定引擎：使用 priorityEngine 陣列確保判定順序絕對不變
             let matchedDomain = "其他";
             const fullText = `${item.project_name} ${item.theme} ${item.description}`.toLowerCase();
             
-            for (const [domain, keywords] of Object.entries(domainDictionary)) {
-                if (domain === '全部' || domain === '其他') continue;
+            for (const domain of priorityEngine) {
+                const keywords = domainDictionary[domain];
                 if (keywords.some(k => fullText.includes(k))) {
                     matchedDomain = domain;
-                    break; // 確保每筆計畫只算入一個領域，維持 Checksum
+                    break; // 確保只要具備最高順位（如教育）的屬性，就立即鎖定分類並跳出迴圈
                 }
             }
             projectDomainMap[item.id] = matchedDomain;
             domainCounts[matchedDomain]++;
 
-            // 處理地理板塊
+            // 地理板塊判定
             let matchedRegion = "未歸類";
             for (const [region, keywords] of Object.entries(regionDictionary)) {
                 if (region === '全部' || region === '未歸類') continue;
@@ -237,7 +241,7 @@
             projectRegionMap[item.id] = matchedRegion;
             regionCounts[matchedRegion]++;
 
-            // 處理官方主題
+            // 官方主題判定
             const rawCat = item.category.replace(/　/g, '').replace(/\s+/g, ' ');
             let matchedCategory = "未歸類";
             
@@ -256,12 +260,25 @@
             categoryCounts[matchedCategory] = (categoryCounts[matchedCategory] || 0) + 1;
         });
 
-        // 渲染「核心領域」
         const domContainer = document.getElementById('domainFilters');
-        for (const domain in domainDictionary) {
-            if (domain === '其他' && domainCounts[domain] === 0) continue;
+        
+        // 生成「全部」按鈕
+        const btnAllDom = document.createElement('button');
+        btnAllDom.className = `btn-filter btn-domain dom-btn active`;
+        btnAllDom.innerText = `全部 (${domainCounts["全部"]})`;
+        btnAllDom.onclick = () => {
+            document.querySelectorAll('.dom-btn').forEach(b => b.classList.remove('active'));
+            btnAllDom.classList.add('active');
+            activeDomain = '全部';
+            renderTable(document.getElementById('searchInput').value);
+        };
+        domContainer.appendChild(btnAllDom);
+
+        // 依照 priorityEngine 的順序生成領域按鈕
+        priorityEngine.forEach(domain => {
+            if (domainCounts[domain] === 0) return;
             const btn = document.createElement('button');
-            btn.className = `btn-filter btn-domain dom-btn ${domain === '全部' ? 'active' : ''}`;
+            btn.className = `btn-filter btn-domain dom-btn`;
             btn.innerText = `${domain} (${domainCounts[domain]})`;
             btn.onclick = () => {
                 document.querySelectorAll('.dom-btn').forEach(b => b.classList.remove('active'));
@@ -270,9 +287,22 @@
                 renderTable(document.getElementById('searchInput').value);
             };
             domContainer.appendChild(btn);
+        });
+
+        // 若有其他未匹配項目，才生成「其他」按鈕
+        if (domainCounts["其他"] > 0) {
+            const btnOther = document.createElement('button');
+            btnOther.className = `btn-filter btn-domain dom-btn`;
+            btnOther.innerText = `其他 (${domainCounts["其他"]})`;
+            btnOther.onclick = () => {
+                document.querySelectorAll('.dom-btn').forEach(b => b.classList.remove('active'));
+                btnOther.classList.add('active');
+                activeDomain = "其他";
+                renderTable(document.getElementById('searchInput').value);
+            };
+            domContainer.appendChild(btnOther);
         }
 
-        // 渲染「官方主題」
         const catContainer = document.getElementById('categoryFilters');
         const renderCategoryBtn = (catName, displayCatName = catName) => {
             if (catName !== '全部' && !categoryCounts[catName]) return;
@@ -291,7 +321,6 @@
         officialCategories.forEach(cat => renderCategoryBtn(cat));
         extraCategories.forEach(cat => renderCategoryBtn(cat));
 
-        // 渲染「地理板塊」
         const regContainer = document.getElementById('regionFilters');
         for (const region in regionDictionary) {
             if (region === '未歸類' && regionCounts[region] === 0) continue;
@@ -363,16 +392,13 @@
         const keyword = searchKeyword.toLowerCase();
 
         rawData.forEach(item => {
-            // 邏輯閘 1：隱藏狀態
             const isHidden = hiddenIds.has(item.id);
             if (!isViewingHidden && isHidden) return; 
             if (isViewingHidden && !isHidden) return; 
 
-            // 邏輯閘 2：關鍵字搜尋
             const searchableText = `${item.project_name} ${item.city} ${item.theme} ${item.description}`.toLowerCase();
             if (keyword && !searchableText.includes(keyword)) return;
 
-            // 邏輯閘 3：三維度過濾 (AND 邏輯交集)
             if (activeDomain !== '全部' && projectDomainMap[item.id] !== activeDomain) return;
             if (activeCategory !== '全部' && projectCategoryMap[item.id] !== activeCategory) return;
             if (activeRegion !== '全部' && projectRegionMap[item.id] !== activeRegion) return;
@@ -392,7 +418,6 @@
                 ? `<button class="btn btn-unhide" onclick="unhideRow('${item.id}')">取消隱藏</button>`
                 : `<button class="btn btn-hide" onclick="hideRow('${item.id}')">隱藏</button>`;
 
-            // 動態加上我們剛算出來的「領域標籤」
             const domainBadge = `<span class="tag tag-domain">★ ${projectDomainMap[item.id]}</span>`;
 
             tr.innerHTML = `
