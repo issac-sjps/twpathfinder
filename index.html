@@ -128,7 +128,7 @@
             padding: 18px 25px;
             text-align: center;
             text-decoration: none;
-            color: #fff;
+            color: #222; /* 已修正：從 #fff 改為高對比深黑色 */
             border-radius: 12px;
             font-weight: 800;
             font-size: 1.15rem;
@@ -143,6 +143,7 @@
         .btn-junior:hover {
             transform: translateY(-3px);
             box-shadow: 0 8px 25px rgba(0, 242, 254, 0.4);
+            color: #000; /* 懸停時確保顏色極致深黑 */
         }
         .btn-senior {
             background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
@@ -150,6 +151,7 @@
         .btn-senior:hover {
             transform: translateY(-3px);
             box-shadow: 0 8px 25px rgba(253, 160, 133, 0.4);
+            color: #000; /* 懸停時確保顏色極致深黑 */
         }
 
         .note {
@@ -205,6 +207,7 @@
             <a href="https://twpathfinder.org/overview_entrance" target="_blank" class="official-link">👉 立即前往圓夢一覽表，挑選您的夢想計畫 (原官方連結)</a>
         </div>
     </div>
+
     <table class="stats-table">
         <thead>
             <tr>
