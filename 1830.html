@@ -93,8 +93,8 @@
             <button class="btn btn-toggle" id="toggleHiddenBtn">檢視隱藏計畫 (0)</button>
             <button class="btn btn-reset" id="resetHiddenBtn">清空隱藏名單</button>
             
-            <a href="index_1517.html" class="btn btn-switch">切換至 15-17 歲組</a>
-            <a href="https://twpathfinder.org/overview1830" target="_blank" class="btn btn-official">🔗 18-30歲官方網站</a>
+            <a href="index_1517.html" class="btn btn-switch">回首頁</a>
+            <a href="https://twpathfinder.org/overview1830" target="_blank" class="btn btn-official">🔗 官方網站</a>
         </div>
     </div>
     
@@ -178,7 +178,6 @@
         "未歸類": [] 
     };
 
-    // 核心資料庫隔離：針對 18-30 歲使用專屬的 local storage 記憶空間
     const loadHiddenIds = () => {
         const saved = localStorage.getItem('pathfinder_hidden_ids');
         if (saved) hiddenIds = new Set(JSON.parse(saved));
@@ -285,9 +284,16 @@
         const extraCategories = new Set();
 
         data.forEach(item => {
+            // 防禦性編程：確保所有字串都不為空值，避免 toLowerCase() 報錯當機
+            const safeTheme = item.theme || '';
+            const safeDesc = item.description || '';
+            const safeCity = item.city || '';
+            const safeCat = item.category || '';
+            const safeName = item.project_name || '';
+
             let matchedDomain = "其他";
             let maxScore = 0;
-            const textToSearch = `${item.theme} ${item.description}`.toLowerCase();
+            const textToSearch = `${safeTheme} ${safeDesc}`.toLowerCase();
             
             for (const [domain, keywords] of Object.entries(domainDictionary)) {
                 let score = 0;
@@ -310,14 +316,14 @@
             let matchedRegion = "未歸類";
             for (const [region, keywords] of Object.entries(regionDictionary)) {
                 if (region === '全部' || region === '未歸類') continue;
-                if (keywords.some(k => item.city.includes(k))) {
+                if (keywords.some(k => safeCity.includes(k))) {
                     matchedRegion = region;
                     break;
                 }
             }
             projectRegionMap[item.id] = matchedRegion;
 
-            const rawCat = item.category.replace(/　/g, '').replace(/\s+/g, ' ');
+            const rawCat = safeCat.replace(/　/g, '').replace(/\s+/g, ' ');
             let matchedCategory = "未歸類";
             
             if (rawCat.includes("年度旗艦計畫")) {
@@ -330,7 +336,7 @@
                     matchedCategory = match;
                 } else {
                     matchedCategory = rawCat;
-                    extraCategories.add(rawCat);
+                    if (rawCat.trim() !== '') extraCategories.add(rawCat);
                 }
             }
             projectCategoryMap[item.id] = matchedCategory;
@@ -338,6 +344,7 @@
 
         const createBtn = (containerId, val, btnClass, clickHandler) => {
             const container = document.getElementById(containerId);
+            if(!container) return; // 防禦性檢查
             const btn = document.createElement('button');
             btn.className = `btn-filter ${btnClass} ${val === '全部' ? 'active' : ''}`;
             btn.setAttribute('data-val', val);
@@ -366,6 +373,7 @@
     const detectMissingIds = (data) => {
         const groups = {};
         data.forEach(item => {
+            if(!item.id) return;
             const parts = item.id.split('-');
             if (parts.length >= 3) {
                 const prefix = parts.slice(0, parts.length - 1).join('-');
@@ -396,7 +404,7 @@
         }
     };
 
-    // 核心資料源對接：確保抓取的是 18-30 歲的主資料庫
+    // 核心資料源對接：強制攔截任何非 JSON 的異常載入
     fetch('pathfinder_data.json')
         .then(res => {
             if (!res.ok) {
@@ -405,6 +413,9 @@
             return res.json();
         })
         .then(data => {
+            if (!Array.isArray(data)) {
+                throw new Error("資料格式異常：取得的內容不是陣列(Array)。請檢查爬蟲產出的 JSON 檔案是否正確。");
+            }
             rawData = data;
             loadHiddenIds();
             initFilters(rawData); 
@@ -434,7 +445,17 @@
             if (!isViewingHidden && isHidden) return; 
             if (isViewingHidden && !isHidden) return; 
 
-            const searchableText = `${item.project_name} ${item.city} ${item.theme} ${item.description}`.toLowerCase();
+            // 防禦性編程
+            const safeProjectName = item.project_name || '';
+            const safeCity = item.city || '';
+            const safeTheme = item.theme || '';
+            const safeDesc = item.description || '';
+            const safeDuration = item.duration || '';
+            const safeQuota = item.quota || '';
+            const safeCat = item.category || '';
+            const safeDownloadUrl = item.download_url || '';
+
+            const searchableText = `${safeProjectName} ${safeCity} ${safeTheme} ${safeDesc}`.toLowerCase();
             if (keyword && !searchableText.includes(keyword)) return;
 
             if (activeDomain !== '全部' && projectDomainMap[item.id] !== activeDomain) return;
@@ -446,11 +467,11 @@
             const tr = document.createElement('tr');
             tr.id = `row-${item.id}`;
             
-            const downloadHtml = item.download_url 
-                ? `<a href="${item.download_url}" target="_blank" class="btn-download">下載</a>` 
+            const downloadHtml = safeDownloadUrl 
+                ? `<a href="${safeDownloadUrl}" target="_blank" class="btn-download">下載</a>` 
                 : `<span class="btn-download disabled">無</span>`;
 
-            const cleanCategory = item.category.replace(/　/g, '').replace(/\s+/g, ' ');
+            const cleanCategory = safeCat.replace(/　/g, '').replace(/\s+/g, ' ');
             
             const actionBtnHtml = isViewingHidden
                 ? `<button class="btn btn-unhide" onclick="unhideRow('${item.id}')">取消隱藏</button>`
@@ -460,15 +481,15 @@
 
             tr.innerHTML = `
                 <td><strong>${item.id}</strong></td>
-                <td><strong>${item.project_name}</strong><br><small style="color:#7f8c8d">${item.duration}</small></td>
-                <td>${item.city}</td>
+                <td><strong>${safeProjectName}</strong><br><small style="color:#7f8c8d">${safeDuration}</small></td>
+                <td>${safeCity}</td>
                 <td>
                     ${domainBadge}<br>
                     <span class="tag tag-cat">${cleanCategory}</span><br>
-                    <span class="tag tag-theme">${item.theme}</span>
+                    <span class="tag tag-theme">${safeTheme}</span>
                 </td>
-                <td style="text-align:center;">${item.quota}</td>
-                <td class="description-cell">${item.description}</td>
+                <td style="text-align:center;">${safeQuota}</td>
+                <td class="description-cell">${safeDesc}</td>
                 <td>${downloadHtml}</td>
                 <td>${actionBtnHtml}</td>
             `;
