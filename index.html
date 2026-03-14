@@ -13,6 +13,7 @@
             --warning-color: #f39c12;
             --info-color: #3498db;
             --purple-color: #8e44ad;
+            --domain-color: #16a085;
             --bg-color: #f8f9fa;
             --border-color: #dee2e6;
             --alert-bg: #fdf2e9;
@@ -20,7 +21,7 @@
         }
 
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg-color); color: #333; line-height: 1.6; margin: 0; padding: 20px; }
-        .container { max-width: 1400px; margin: auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .container { max-width: 1450px; margin: auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
         .header-section { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid var(--border-color); }
         h1 { margin: 0; color: var(--primary-color); font-size: 24px; }
 
@@ -51,56 +52,29 @@
 
         .mode-indicator { display: none; background-color: var(--warning-color); color: white; text-align: center; padding: 8px; font-weight: bold; margin-bottom: 15px; border-radius: 4px; }
 
-        /* 雙維度過濾器樣式 */
-        .filter-group {
-            background-color: #f1f5f8;
-            border-radius: 6px;
-            margin-bottom: 15px;
-            padding: 15px;
-            display: flex;
-            align-items: flex-start;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        
-        .filter-label {
-            font-weight: bold;
-            color: var(--secondary-color);
-            margin-right: 5px;
-            white-space: nowrap;
-            display: flex;
-            align-items: center;
-            padding-top: 6px; /* 對齊按鈕 */
-        }
+        /* 三維度過濾器樣式 */
+        .filter-group { background-color: #f1f5f8; border-radius: 6px; margin-bottom: 12px; padding: 12px 15px; display: flex; align-items: flex-start; flex-wrap: wrap; gap: 10px; }
+        .filter-label { font-weight: bold; color: var(--secondary-color); margin-right: 5px; white-space: nowrap; display: flex; align-items: center; padding-top: 6px; width: 110px; }
+        .filter-buttons-container { display: flex; flex-wrap: wrap; gap: 8px; flex: 1; }
 
-        .filter-buttons-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            flex: 1;
-        }
-
-        .btn-filter {
-            background-color: white;
-            color: var(--secondary-color);
-            border: 1px solid #bdc3c7;
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-size: 13px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
+        .btn-filter { background-color: white; color: var(--secondary-color); border: 1px solid #bdc3c7; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
         .btn-filter:hover { border-color: var(--info-color); color: var(--info-color); }
         .btn-filter.active { background-color: var(--info-color); color: white; border-color: var(--info-color); font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .btn-filter.error { background-color: #fdedec; color: #c0392b; border-color: #e74c3c; }
+        
+        .btn-domain { border-color: #a2d9ce; }
+        .btn-domain:hover { border-color: var(--domain-color); color: var(--domain-color); }
+        .btn-domain.active { background-color: var(--domain-color); border-color: var(--domain-color); color: white; }
 
         table { width: 100%; border-collapse: collapse; font-size: 14px; }
         th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border-color); vertical-align: top; }
         th { background-color: var(--primary-color); color: white; position: sticky; top: 0; z-index: 10; }
         tr:hover { background-color: #f8f9fa; }
-        .tag { display: inline-block; padding: 3px 8px; border-radius: 3px; background-color: #e3f2fd; color: #1976d2; font-size: 11px; margin-bottom: 5px; margin-right: 5px; }
+        
+        .tag { display: inline-block; padding: 3px 8px; border-radius: 3px; font-size: 11px; margin-bottom: 5px; margin-right: 5px; }
+        .tag-cat { background-color: #e3f2fd; color: #1976d2; }
+        .tag-theme { background-color: #e8f8f5; color: #1abc9c; }
+        .tag-domain { background-color: #fef9e7; color: #d4ac0d; font-weight: bold; border: 1px solid #f1c40f;}
+        
         .description-cell { max-width: 350px; }
         .fade-out { opacity: 0; transform: translateX(20px); transition: opacity 0.3s, transform 0.3s; }
     </style>
@@ -125,7 +99,13 @@
     </div>
 
     <div class="filter-group">
-        <div class="filter-label">🏷️ 主題類別：</div>
+        <div class="filter-label">💡 核心領域：</div>
+        <div class="filter-buttons-container" id="domainFilters">
+            </div>
+    </div>
+
+    <div class="filter-group">
+        <div class="filter-label">🏷️ 官方主題：</div>
         <div class="filter-buttons-container" id="categoryFilters">
             </div>
     </div>
@@ -144,7 +124,7 @@
                 <th style="width: 8%">編號</th>
                 <th style="width: 15%">計畫名稱</th>
                 <th style="width: 10%">城市</th>
-                <th style="width: 17%">主題與類別</th>
+                <th style="width: 17%">領域與分類</th>
                 <th style="width: 5%">名額</th>
                 <th style="width: 30%">簡述</th>
                 <th style="width: 7%">簡章</th>
@@ -161,15 +141,30 @@
     let hiddenIds = new Set();
     let isViewingHidden = false; 
     
-    // 狀態機：追蹤當前選中的雙維度篩選器
+    // 狀態機：追蹤三維度過濾器
+    let activeDomain = '全部';
     let activeCategory = '全部';
     let activeRegion = '全部'; 
     
     // 全域映射表
+    let projectDomainMap = {};
     let projectRegionMap = {}; 
     let projectCategoryMap = {};
 
-    // 官方主題類別定義 (用於統一字串格式與排序)
+    // 1. 核心領域字典 (利用語意分析)
+    const domainDictionary = {
+        "全部": [],
+        "科技與工程": ["科技", "數位", "ai", "人工智慧", "半導體", "量子", "機器人", "工程", "資訊", "網路", "軟體", "系統", "資安", "航太", "通訊", "大數據", "雲端"],
+        "環境與生態": ["環境", "生態", "保育", "永續", "氣候", "淨零", "碳", "海洋", "動物", "農業", "雨林", "水質", "減碳", "綠能", "自然", "環保"],
+        "教育與學術": ["教育", "學校", "教學", "教案", "學生", "學術", "課後輔導", "師資", "雙語", "研討會", "研究"],
+        "外交與公共事務": ["外交", "政策", "人權", "民主", "治理", "智庫", "倡議", "公共", "社會", "原民", "平權", "政府", "法律", "志工"],
+        "藝文與設計": ["藝術", "文化", "博物館", "策展", "設計", "影音", "媒體", "歷史", "文創", "文學", "攝影", "馬戲", "音樂", "舞蹈", "建築"],
+        "商業與新創": ["商業", "行銷", "新創", "創業", "金融", "經濟", "產業", "投資", "企劃", "商務", "品牌", "市場", "物流"],
+        "醫療與公衛": ["醫療", "公衛", "醫學", "衛生", "照護", "醫院", "生醫", "疾病", "防疫", "細胞"],
+        "其他": [] 
+    };
+
+    // 2. 官方主題類別字典
     const officialCategories = [
         "全部",
         "年度旗艦計畫",
@@ -183,12 +178,13 @@
         "(九)科技網絡及數位服務"
     ];
 
+    // 3. 地理板塊字典
     const regionDictionary = {
         "全部": [],
-        "亞洲": ["日本", "韓國", "印度", "印尼", "新加坡", "泰國"],
-        "大洋洲": ["澳洲", "澳大利亞", "雪梨", "墨爾本", "吐瓦魯", "帛琉"], 
+        "亞洲": ["日本", "韓國", "印度", "印尼", "新加坡", "泰國", "沖繩", "北海道"],
+        "大洋洲": ["澳洲", "澳大利亞", "雪梨", "墨爾本", "吐瓦魯", "帛琉", "布里斯本"], 
         "歐洲": ["法國", "義大利", "斯洛伐克", "捷克", "保加利亞", "荷蘭", "愛爾蘭", "德國", "比利時", "瑞典", "冰島", "奧地利", "波蘭", "斯洛維尼亞", "葡萄牙", "西班牙", "瑞士", "英國", "梵蒂岡"],
-        "北美洲": ["美國", "加拿大", "墨西哥"],
+        "北美洲": ["美國", "加拿大", "墨西哥", "紐約", "加州", "華盛頓"],
         "中南美洲": ["貝里斯", "瓜地馬拉", "巴拉圭", "智利", "聖露西亞", "聖文森", "阿根廷", "祕魯", "秘魯", "格瑞那丁"],
         "非洲": ["史瓦帝尼"],
         "未歸類": [] 
@@ -203,20 +199,32 @@
         localStorage.setItem('pathfinder_hidden_ids', JSON.stringify(Array.from(hiddenIds)));
     };
 
-    // 初始化雙維度過濾器
     const initFilters = (data) => {
-        // 1. 準備計數器
+        const domainCounts = { "全部": data.length };
         const categoryCounts = { "全部": data.length };
         const regionCounts = { "全部": data.length };
         
+        for (const dom in domainDictionary) { if(dom !== "全部") domainCounts[dom] = 0; }
         officialCategories.forEach(cat => { if(cat !== "全部") categoryCounts[cat] = 0; });
-        for (const region in regionDictionary) { if(region !== "全部") regionCounts[region] = 0; }
+        for (const reg in regionDictionary) { if(reg !== "全部") regionCounts[reg] = 0; }
         
-        // 額外捕捉未在官方列表中的例外類別
         const extraCategories = new Set();
 
-        // 2. 掃描資料，建立映射並計數
         data.forEach(item => {
+            // 處理核心領域 (Domain)
+            let matchedDomain = "其他";
+            const fullText = `${item.project_name} ${item.theme} ${item.description}`.toLowerCase();
+            
+            for (const [domain, keywords] of Object.entries(domainDictionary)) {
+                if (domain === '全部' || domain === '其他') continue;
+                if (keywords.some(k => fullText.includes(k))) {
+                    matchedDomain = domain;
+                    break; // 確保每筆計畫只算入一個領域，維持 Checksum
+                }
+            }
+            projectDomainMap[item.id] = matchedDomain;
+            domainCounts[matchedDomain]++;
+
             // 處理地理板塊
             let matchedRegion = "未歸類";
             for (const [region, keywords] of Object.entries(regionDictionary)) {
@@ -229,42 +237,49 @@
             projectRegionMap[item.id] = matchedRegion;
             regionCounts[matchedRegion]++;
 
-            // 處理主題類別 (清理字串以利比對)
+            // 處理官方主題
             const rawCat = item.category.replace(/　/g, '').replace(/\s+/g, ' ');
             let matchedCategory = "未歸類";
             
             if (rawCat.includes("年度旗艦計畫")) {
                 matchedCategory = "年度旗艦計畫";
             } else {
-                // 嘗試匹配官方分類
                 const match = officialCategories.find(c => c !== "全部" && c !== "年度旗艦計畫" && rawCat.includes(c));
                 if (match) {
                     matchedCategory = match;
                 } else {
-                    matchedCategory = rawCat; // 如果都不符合，保留原始字串
+                    matchedCategory = rawCat;
                     extraCategories.add(rawCat);
                 }
             }
-            
             projectCategoryMap[item.id] = matchedCategory;
-            if (categoryCounts[matchedCategory] !== undefined) {
-                categoryCounts[matchedCategory]++;
-            } else {
-                categoryCounts[matchedCategory] = 1;
-            }
+            categoryCounts[matchedCategory] = (categoryCounts[matchedCategory] || 0) + 1;
         });
 
-        // 3. 渲染「主題類別」按鈕
+        // 渲染「核心領域」
+        const domContainer = document.getElementById('domainFilters');
+        for (const domain in domainDictionary) {
+            if (domain === '其他' && domainCounts[domain] === 0) continue;
+            const btn = document.createElement('button');
+            btn.className = `btn-filter btn-domain dom-btn ${domain === '全部' ? 'active' : ''}`;
+            btn.innerText = `${domain} (${domainCounts[domain]})`;
+            btn.onclick = () => {
+                document.querySelectorAll('.dom-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                activeDomain = domain;
+                renderTable(document.getElementById('searchInput').value);
+            };
+            domContainer.appendChild(btn);
+        }
+
+        // 渲染「官方主題」
         const catContainer = document.getElementById('categoryFilters');
         const renderCategoryBtn = (catName, displayCatName = catName) => {
-            if (catName !== '全部' && (categoryCounts[catName] === 0 || categoryCounts[catName] === undefined)) return;
-            
+            if (catName !== '全部' && !categoryCounts[catName]) return;
             const btn = document.createElement('button');
             btn.className = `btn-filter cat-btn ${catName === '全部' ? 'active' : ''}`;
-            // 簡化顯示名稱，移除前面的羅馬數字讓版面更乾淨
             const shortName = displayCatName.replace(/^\([一二三四五六七八九十]+\)/, '');
-            btn.innerText = `${shortName} (${categoryCounts[catName] || 0})`;
-            
+            btn.innerText = `${shortName} (${categoryCounts[catName]})`;
             btn.onclick = () => {
                 document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
@@ -273,20 +288,16 @@
             };
             catContainer.appendChild(btn);
         };
-
         officialCategories.forEach(cat => renderCategoryBtn(cat));
-        extraCategories.forEach(cat => renderCategoryBtn(cat)); // 渲染未預期的例外類別
+        extraCategories.forEach(cat => renderCategoryBtn(cat));
 
-        // 4. 渲染「地理板塊」按鈕
+        // 渲染「地理板塊」
         const regContainer = document.getElementById('regionFilters');
         for (const region in regionDictionary) {
             if (region === '未歸類' && regionCounts[region] === 0) continue;
-            
             const btn = document.createElement('button');
-            const btnClass = region === '未歸類' ? 'btn-filter reg-btn error' : 'btn-filter reg-btn';
-            btn.className = `${btnClass} ${region === '全部' ? 'active' : ''}`;
+            btn.className = `btn-filter reg-btn ${region === '全部' ? 'active' : ''}`;
             btn.innerText = `${region} (${regionCounts[region]})`;
-            
             btn.onclick = () => {
                 document.querySelectorAll('.reg-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
@@ -331,10 +342,7 @@
     };
 
     fetch('pathfinder_data.json')
-        .then(res => {
-            if (!res.ok) throw new Error("無法讀取 JSON 檔案，請確認伺服器狀態與檔案路徑。");
-            return res.json();
-        })
+        .then(res => res.json())
         .then(data => {
             rawData = data;
             document.getElementById('totalCount').innerText = rawData.length;
@@ -345,7 +353,7 @@
         })
         .catch(err => {
             console.error(err);
-            document.getElementById('tableBody').innerHTML = `<tr><td colspan="8" style="text-align:center; color:red;">資料載入失敗：${err.message}</td></tr>`;
+            document.getElementById('tableBody').innerHTML = `<tr><td colspan="8" style="text-align:center; color:red;">資料載入失敗</td></tr>`;
         });
 
     const renderTable = (searchKeyword = '') => {
@@ -364,15 +372,10 @@
             const searchableText = `${item.project_name} ${item.city} ${item.theme} ${item.description}`.toLowerCase();
             if (keyword && !searchableText.includes(keyword)) return;
 
-            // 邏輯閘 3：主題類別過濾 (AND 邏輯)
-            if (activeCategory !== '全部') {
-                if (projectCategoryMap[item.id] !== activeCategory) return;
-            }
-
-            // 邏輯閘 4：地理板塊過濾 (AND 邏輯)
-            if (activeRegion !== '全部') {
-                if (projectRegionMap[item.id] !== activeRegion) return;
-            }
+            // 邏輯閘 3：三維度過濾 (AND 邏輯交集)
+            if (activeDomain !== '全部' && projectDomainMap[item.id] !== activeDomain) return;
+            if (activeCategory !== '全部' && projectCategoryMap[item.id] !== activeCategory) return;
+            if (activeRegion !== '全部' && projectRegionMap[item.id] !== activeRegion) return;
 
             displayCount++;
 
@@ -389,13 +392,17 @@
                 ? `<button class="btn btn-unhide" onclick="unhideRow('${item.id}')">取消隱藏</button>`
                 : `<button class="btn btn-hide" onclick="hideRow('${item.id}')">隱藏</button>`;
 
+            // 動態加上我們剛算出來的「領域標籤」
+            const domainBadge = `<span class="tag tag-domain">★ ${projectDomainMap[item.id]}</span>`;
+
             tr.innerHTML = `
                 <td><strong>${item.id}</strong></td>
                 <td><strong>${item.project_name}</strong><br><small style="color:#7f8c8d">${item.duration}</small></td>
                 <td>${item.city}</td>
                 <td>
-                    <span class="tag">${cleanCategory}</span><br>
-                    <span class="tag" style="background-color:#e8f8f5; color:#1abc9c;">${item.theme}</span>
+                    ${domainBadge}<br>
+                    <span class="tag tag-cat">${cleanCategory}</span><br>
+                    <span class="tag tag-theme">${item.theme}</span>
                 </td>
                 <td style="text-align:center;">${item.quota}</td>
                 <td class="description-cell">${item.description}</td>
