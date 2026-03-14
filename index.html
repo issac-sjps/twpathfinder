@@ -19,66 +19,16 @@
             --alert-border: #e67e22;
         }
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-color);
-            color: #333;
-            line-height: 1.6;
-            margin: 0;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 1400px;
-            margin: auto;
-            background: white;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-        }
-
-        .header-section {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid var(--border-color);
-        }
-
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg-color); color: #333; line-height: 1.6; margin: 0; padding: 20px; }
+        .container { max-width: 1400px; margin: auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .header-section { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid var(--border-color); }
         h1 { margin: 0; color: var(--primary-color); font-size: 24px; }
 
-        .control-panel {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-        }
-
-        input[type="text"] {
-            padding: 10px 15px;
-            width: 280px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-size: 14px;
-            transition: border-color 0.3s;
-        }
-
+        .control-panel { display: flex; gap: 12px; align-items: center; }
+        input[type="text"] { padding: 10px 15px; width: 280px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; transition: border-color 0.3s; }
         input[type="text"]:focus { outline: none; border-color: var(--primary-color); }
 
-        .btn {
-            padding: 8px 15px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 13px;
-            font-weight: bold;
-            transition: all 0.2s;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-        }
-
+        .btn { padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: bold; transition: all 0.2s; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
         .btn-toggle { background-color: var(--warning-color); color: white; }
         .btn-toggle:hover { background-color: #d68910; }
         .btn-reset { background-color: var(--secondary-color); color: white; }
@@ -93,62 +43,21 @@
         .btn-download:hover { background-color: #219653; }
         .btn-download.disabled { background-color: #95a5a6; cursor: not-allowed; pointer-events: none; }
 
-        .stats-badge {
-            background-color: #e9ecef;
-            padding: 5px 10px;
-            border-radius: 12px;
-            font-size: 14px;
-            color: #495057;
-        }
+        .stats-badge { background-color: #e9ecef; padding: 5px 10px; border-radius: 12px; font-size: 14px; color: #495057; }
 
-        /* 異常偵測面板樣式 */
-        .missing-alert {
-            background-color: var(--alert-bg);
-            border-left: 5px solid var(--alert-border);
-            padding: 15px 20px;
-            margin-bottom: 20px;
-            border-radius: 4px;
-            display: none;
-        }
-        
+        .missing-alert { background-color: var(--alert-bg); border-left: 5px solid var(--alert-border); padding: 15px 20px; margin-bottom: 20px; border-radius: 4px; display: none; }
         .missing-alert h3 { margin: 0 0 10px 0; color: #d35400; font-size: 16px; display: flex; align-items: center; }
         .missing-tag { display: inline-block; background-color: #fad7a1; color: #b93b00; padding: 4px 8px; border-radius: 4px; margin: 0 6px 6px 0; font-weight: bold; font-family: monospace; font-size: 13px; border: 1px solid #f39c12; }
 
-        .mode-indicator {
-            display: none; background-color: var(--warning-color); color: white; text-align: center; padding: 8px; font-weight: bold; margin-bottom: 15px; border-radius: 4px;
-        }
+        .mode-indicator { display: none; background-color: var(--warning-color); color: white; text-align: center; padding: 8px; font-weight: bold; margin-bottom: 15px; border-radius: 4px; }
 
-        /* 洲別過濾器樣式 */
-        .region-filters {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            padding: 15px;
-            background-color: #f1f5f8;
-            border-radius: 6px;
-            flex-wrap: wrap;
-        }
-
-        .region-filters span {
-            font-weight: bold;
-            color: var(--secondary-color);
-            margin-right: 5px;
-            display: flex;
-            align-items: center;
-        }
-
-        .btn-region {
-            background-color: white;
-            color: var(--secondary-color);
-            border: 1px solid #bdc3c7;
-            padding: 6px 16px;
-            border-radius: 20px;
-            font-size: 14px;
-            font-weight: 500;
-        }
-
+        /* 洲別過濾器樣式強化 */
+        .region-filters { display: flex; gap: 10px; margin-bottom: 20px; padding: 15px; background-color: #f1f5f8; border-radius: 6px; flex-wrap: wrap; align-items: center; }
+        .region-filters span { font-weight: bold; color: var(--secondary-color); margin-right: 5px; display: flex; align-items: center; }
+        .btn-region { background-color: white; color: var(--secondary-color); border: 1px solid #bdc3c7; padding: 6px 16px; border-radius: 20px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
         .btn-region:hover { border-color: var(--info-color); color: var(--info-color); }
-        .btn-region.active { background-color: var(--info-color); color: white; border-color: var(--info-color); font-weight: bold; }
+        .btn-region.active { background-color: var(--info-color); color: white; border-color: var(--info-color); font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .btn-region.error { background-color: #fdedec; color: #c0392b; border-color: #e74c3c; } /* 未歸類專用警告色 */
 
         table { width: 100%; border-collapse: collapse; font-size: 14px; }
         th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border-color); vertical-align: top; }
@@ -198,7 +107,7 @@
             </tr>
         </thead>
         <tbody id="tableBody">
-            </tbody>
+        </tbody>
     </table>
 </div>
 
@@ -206,9 +115,10 @@
     let rawData = [];
     let hiddenIds = new Set();
     let isViewingHidden = false; 
-    let activeRegion = '全部'; // 當前選中的洲別狀態
+    let activeRegion = '全部'; 
+    let projectRegionMap = {}; // 建立全域對照表，提升渲染效能
 
-    // 硬核地理字典：將城市字串暴力映射至正確的板塊
+    // 嚴謹的地緣政治與地理字典
     const regionDictionary = {
         "全部": [],
         "亞洲": ["日本", "韓國", "印度", "印尼", "新加坡", "泰國"],
@@ -216,7 +126,8 @@
         "歐洲": ["法國", "義大利", "斯洛伐克", "捷克", "保加利亞", "荷蘭", "愛爾蘭", "德國", "比利時", "瑞典", "冰島", "奧地利", "波蘭", "斯洛維尼亞", "葡萄牙", "西班牙", "瑞士", "英國", "梵蒂岡"],
         "北美洲": ["美國", "加拿大", "墨西哥"],
         "中南美洲": ["貝里斯", "瓜地馬拉", "巴拉圭", "智利", "聖露西亞", "聖文森", "阿根廷", "祕魯", "秘魯", "格瑞那丁"],
-        "非洲": ["史瓦帝尼"]
+        "非洲": ["史瓦帝尼"],
+        "未歸類": [] // 捕捉所有未涵蓋的邊緣案例
     };
 
     const loadHiddenIds = () => {
@@ -228,19 +139,46 @@
         localStorage.setItem('pathfinder_hidden_ids', JSON.stringify(Array.from(hiddenIds)));
     };
 
-    // 初始化地理過濾按鈕
-    const initRegionFilters = () => {
-        const container = document.getElementById('regionFilters');
+    // 核心邏輯：初始化地區過濾器並執行 Checksum (資料總和檢查碼)
+    const initRegionFilters = (data) => {
+        const counts = { "全部": data.length };
         for (const region in regionDictionary) {
+            if (region !== "全部") counts[region] = 0;
+        }
+
+        // 預處理資料，將每一筆計畫強制綁定一個洲別，確保數學總和絕對精確
+        data.forEach(item => {
+            let matchedRegion = "未歸類";
+            for (const [region, keywords] of Object.entries(regionDictionary)) {
+                if (region === '全部' || region === '未歸類') continue;
+                if (keywords.some(k => item.city.includes(k))) {
+                    matchedRegion = region;
+                    break;
+                }
+            }
+            projectRegionMap[item.id] = matchedRegion;
+            counts[matchedRegion]++;
+        });
+
+        const container = document.getElementById('regionFilters');
+        container.innerHTML = '<span>📍 快速板塊篩選：</span>'; 
+
+        for (const region in regionDictionary) {
+            // 如果未歸類項目為 0，則隱藏該按鈕，維持畫面專業度
+            if (region === '未歸類' && counts[region] === 0) continue;
+
             const btn = document.createElement('button');
-            btn.className = `btn btn-region ${region === '全部' ? 'active' : ''}`;
-            btn.innerText = region;
+            
+            // 針對未歸類項目給予警告樣式
+            const btnClass = region === '未歸類' ? 'btn-region error' : 'btn-region';
+            btn.className = `${btnClass} ${region === '全部' ? 'active' : ''}`;
+            
+            // 將計畫數量精準寫入按鈕中
+            btn.innerText = `${region} (${counts[region]})`;
+            
             btn.onclick = () => {
-                // 更新按鈕 UI (User Interface) 狀態
                 document.querySelectorAll('.btn-region').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-                
-                // 更新狀態變數並重新渲染表格
                 activeRegion = region;
                 renderTable(document.getElementById('searchInput').value);
             };
@@ -290,7 +228,7 @@
             rawData = data;
             document.getElementById('totalCount').innerText = rawData.length;
             loadHiddenIds();
-            initRegionFilters();
+            initRegionFilters(rawData); // 將資料傳入以精算各區數量
             detectMissingIds(rawData);
             renderTable();
         })
@@ -306,21 +244,16 @@
         const keyword = searchKeyword.toLowerCase();
 
         rawData.forEach(item => {
-            // 邏輯閘 1：隱藏狀態過濾
             const isHidden = hiddenIds.has(item.id);
             if (!isViewingHidden && isHidden) return; 
             if (isViewingHidden && !isHidden) return; 
 
-            // 邏輯閘 2：關鍵字搜尋過濾
             const searchableText = `${item.project_name} ${item.city} ${item.theme} ${item.description}`.toLowerCase();
             if (keyword && !searchableText.includes(keyword)) return;
 
-            // 邏輯閘 3：地理板塊過濾
+            // 高效的板塊過濾：直接比對預處理好的 projectRegionMap，不再每次重新掃描字串
             if (activeRegion !== '全部') {
-                const keywords = regionDictionary[activeRegion];
-                // 檢查城市的字串中是否包含字典定義的任何一個國家關鍵字
-                const isMatch = keywords.some(k => item.city.includes(k));
-                if (!isMatch) return;
+                if (projectRegionMap[item.id] !== activeRegion) return;
             }
 
             displayCount++;
