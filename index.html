@@ -10,6 +10,9 @@
             --secondary-color: #34495e;
             --accent-color: #e74c3c;
             --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --info-color: #3498db;
+            --purple-color: #8e44ad;
             --bg-color: #f8f9fa;
             --border-color: #dee2e6;
         }
@@ -45,13 +48,13 @@
 
         .control-panel {
             display: flex;
-            gap: 15px;
+            gap: 12px;
             align-items: center;
         }
 
         input[type="text"] {
             padding: 10px 15px;
-            width: 350px;
+            width: 280px;
             border: 1px solid #ccc;
             border-radius: 4px;
             font-size: 14px;
@@ -71,15 +74,27 @@
             font-size: 13px;
             font-weight: bold;
             transition: background-color 0.2s, opacity 0.2s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
 
+        /* 控制面板按鈕樣式 */
+        .btn-toggle { background-color: var(--warning-color); color: white; }
+        .btn-toggle:hover { background-color: #d68910; }
         .btn-reset { background-color: var(--secondary-color); color: white; }
         .btn-reset:hover { background-color: #1a252f; }
+        .btn-official { background-color: var(--info-color); color: white; }
+        .btn-official:hover { background-color: #2980b9; }
         
+        /* 表格內操作按鈕樣式 */
         .btn-hide { background-color: var(--accent-color); color: white; padding: 5px 10px; font-size: 12px;}
         .btn-hide:hover { background-color: #c0392b; }
+        .btn-unhide { background-color: var(--purple-color); color: white; padding: 5px 10px; font-size: 12px;}
+        .btn-unhide:hover { background-color: #732d91; }
 
-        .btn-download { background-color: var(--success-color); color: white; text-decoration: none; display: inline-block; padding: 6px 12px; border-radius: 4px; font-size: 12px; }
+        .btn-download { background-color: var(--success-color); color: white; padding: 6px 12px; border-radius: 4px; font-size: 12px; text-decoration: none; display: inline-block;}
         .btn-download:hover { background-color: #219653; }
         .btn-download.disabled { background-color: #95a5a6; cursor: not-allowed; pointer-events: none; }
 
@@ -127,11 +142,22 @@
 
         .description-cell { max-width: 350px; }
 
-        /* 當列被標記為隱藏時的動畫 */
+        /* 行動態消失的過場動畫 */
         .fade-out {
             opacity: 0;
             transform: translateX(20px);
             transition: opacity 0.3s, transform 0.3s;
+        }
+        
+        .mode-indicator {
+            display: none;
+            background-color: var(--warning-color);
+            color: white;
+            text-align: center;
+            padding: 8px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            border-radius: 4px;
         }
     </style>
 </head>
@@ -141,23 +167,27 @@
     <div class="header-section">
         <h1>海外圓夢計畫決策面板</h1>
         <div class="control-panel">
-            <span class="stats-badge">目前顯示：<span id="displayCount">0</span> 筆 / 總計：<span id="totalCount">0</span> 筆</span>
-            <input type="text" id="searchInput" placeholder="輸入關鍵字搜尋 (例如: 澳洲, 教學, AI)...">
-            <button class="btn btn-reset" id="resetHiddenBtn">恢復所有隱藏計畫</button>
+            <span class="stats-badge">顯示：<span id="displayCount">0</span> / 總計：<span id="totalCount">0</span></span>
+            <input type="text" id="searchInput" placeholder="輸入關鍵字 (例如: 澳洲, 教學)...">
+            <button class="btn btn-toggle" id="toggleHiddenBtn">檢視隱藏計畫</button>
+            <button class="btn btn-reset" id="resetHiddenBtn">清空隱藏名單</button>
+            <a href="https://twpathfinder.org/overview1830" target="_blank" class="btn btn-official">官方網站找尋</a>
         </div>
     </div>
+    
+    <div id="modeIndicator" class="mode-indicator">⚠️ 目前處於「隱藏名單」檢視模式。此處顯示的皆為您已剔除的計畫。</div>
 
     <table>
         <thead>
             <tr>
                 <th style="width: 8%">編號</th>
                 <th style="width: 15%">計畫名稱</th>
-                <th style="width: 12%">城市</th>
-                <th style="width: 15%">主題與類別</th>
+                <th style="width: 10%">城市</th>
+                <th style="width: 17%">主題與類別</th>
                 <th style="width: 5%">名額</th>
                 <th style="width: 30%">簡述</th>
-                <th style="width: 8%">簡章</th>
-                <th style="width: 7%">操作</th>
+                <th style="width: 7%">簡章</th>
+                <th style="width: 8%">操作</th>
             </tr>
         </thead>
         <tbody id="tableBody">
@@ -169,6 +199,7 @@
     // 核心資料狀態管理
     let rawData = [];
     let hiddenIds = new Set();
+    let isViewingHidden = false; // 狀態機：控制目前的檢視模式
 
     // 1. 初始化：讀取 LocalStorage 中的隱藏清單
     const loadHiddenIds = () => {
@@ -183,7 +214,7 @@
         localStorage.setItem('pathfinder_hidden_ids', JSON.stringify(Array.from(hiddenIds)));
     };
 
-    // 3. 載入 JSON 資料
+    // 3. 載入 JSON (JavaScript Object Notation) 資料
     fetch('pathfinder_data.json')
         .then(res => {
             if (!res.ok) throw new Error("無法讀取 JSON 檔案，請確認伺服器狀態與檔案路徑。");
@@ -197,7 +228,7 @@
         })
         .catch(err => {
             console.error(err);
-            document.getElementById('tableBody').innerHTML = `<tr><td colspan="8" style="text-align:center; color:red;">資料載入失敗：${err.message}<br>請確保您使用 Live Server 或 Python http.server 啟動網頁，因瀏覽器安全性限制，無法直接點擊 index.html 讀取本地 JSON 檔案。</td></tr>`;
+            document.getElementById('tableBody').innerHTML = `<tr><td colspan="8" style="text-align:center; color:red;">資料載入失敗：${err.message}</td></tr>`;
         });
 
     // 4. 渲染表格的核心邏輯
@@ -209,10 +240,13 @@
         const keyword = searchKeyword.toLowerCase();
 
         rawData.forEach(item => {
-            // 過濾邏輯 A：如果被標記為隱藏，直接跳過
-            if (hiddenIds.has(item.id)) return;
+            const isHidden = hiddenIds.has(item.id);
 
-            // 過濾邏輯 B：關鍵字搜尋 (搜尋範圍包含名稱、城市、主題、簡述)
+            // 嚴格的狀態過濾邏輯
+            if (!isViewingHidden && isHidden) return; // 一般模式：不顯示已隱藏的
+            if (isViewingHidden && !isHidden) return; // 隱藏模式：只顯示已隱藏的
+
+            // 關鍵字搜尋過濾
             const searchableText = `${item.project_name} ${item.city} ${item.theme} ${item.description}`.toLowerCase();
             if (keyword && !searchableText.includes(keyword)) return;
 
@@ -225,8 +259,13 @@
                 ? `<a href="${item.download_url}" target="_blank" class="btn-download">下載</a>` 
                 : `<span class="btn-download disabled">無</span>`;
 
-            // 整理類別標籤，移除過長的空白字元
+            // 整理類別標籤，修剪多餘的空白
             const cleanCategory = item.category.replace(/　/g, '').replace(/\s+/g, ' ');
+            
+            // 根據當前模式動態生成操作按鈕
+            const actionBtnHtml = isViewingHidden
+                ? `<button class="btn btn-unhide" onclick="unhideRow('${item.id}')">取消隱藏</button>`
+                : `<button class="btn btn-hide" onclick="hideRow('${item.id}')">隱藏</button>`;
 
             tr.innerHTML = `
                 <td><strong>${item.id}</strong></td>
@@ -239,9 +278,7 @@
                 <td style="text-align:center;">${item.quota}</td>
                 <td class="description-cell">${item.description}</td>
                 <td>${downloadHtml}</td>
-                <td>
-                    <button class="btn btn-hide" onclick="hideRow('${item.id}')">隱藏</button>
-                </td>
+                <td>${actionBtnHtml}</td>
             `;
             tbody.appendChild(tr);
         });
@@ -249,30 +286,52 @@
         document.getElementById('displayCount').innerText = displayCount;
     };
 
-    // 5. 隱藏單一計畫的觸發函數
+    // 5. 隱藏單一計畫
     window.hideRow = (id) => {
         const row = document.getElementById(`row-${id}`);
-        // 加入 CSS 動畫類別
         row.classList.add('fade-out');
-        
-        // 將 ID 加入隱藏清單並存檔
         hiddenIds.add(id);
         saveHiddenIds();
-
-        // 等待動畫結束後重新渲染表格
-        setTimeout(() => {
-            renderTable(document.getElementById('searchInput').value);
-        }, 300); // 配合 CSS transition 的 0.3s
+        setTimeout(() => { renderTable(document.getElementById('searchInput').value); }, 300);
     };
 
-    // 6. 監聽搜尋輸入
+    // 6. 取消隱藏單一計畫
+    window.unhideRow = (id) => {
+        const row = document.getElementById(`row-${id}`);
+        row.classList.add('fade-out'); // 重用淡出動畫，維持視覺一致性
+        hiddenIds.delete(id);
+        saveHiddenIds();
+        setTimeout(() => { renderTable(document.getElementById('searchInput').value); }, 300);
+    };
+
+    // 7. 切換檢視模式
+    document.getElementById('toggleHiddenBtn').addEventListener('click', () => {
+        isViewingHidden = !isViewingHidden;
+        
+        const btn = document.getElementById('toggleHiddenBtn');
+        const indicator = document.getElementById('modeIndicator');
+        
+        if (isViewingHidden) {
+            btn.innerText = "返回一般檢視";
+            btn.style.backgroundColor = "var(--accent-color)";
+            indicator.style.display = "block";
+        } else {
+            btn.innerText = "檢視隱藏計畫";
+            btn.style.backgroundColor = "var(--warning-color)";
+            indicator.style.display = "none";
+        }
+        
+        renderTable(document.getElementById('searchInput').value);
+    });
+
+    // 8. 監聽搜尋輸入
     document.getElementById('searchInput').addEventListener('input', (e) => {
         renderTable(e.target.value);
     });
 
-    // 7. 恢復所有隱藏計畫
+    // 9. 清空所有隱藏名單
     document.getElementById('resetHiddenBtn').addEventListener('click', () => {
-        if(confirm("確定要恢復所有被隱藏的計畫嗎？")) {
+        if(confirm("這將會清除您所有的隱藏紀錄，確定執行？")) {
             hiddenIds.clear();
             saveHiddenIds();
             renderTable(document.getElementById('searchInput').value);
